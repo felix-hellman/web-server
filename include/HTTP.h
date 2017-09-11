@@ -8,9 +8,7 @@
  *	1 = Reading not done
  */
 
-
-int GET(char * buffer, int buffersize);
-int HEAD(char * buffer,int buffersize);
-
+int GET(char * client_message, char * buffer, int buffersize, int offset);
+int HEAD(char * client_message, char * buffer, int buffersize, int offset);
 
 #endif

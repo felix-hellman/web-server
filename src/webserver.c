@@ -11,6 +11,40 @@ const int THREADPOOL_MAX = 4;
 
 char helptext[] = "-h Print help text\n-p port Listen to port number port\n-d  Run as daemon instead of as a normal program\n-l logfile Log to logfile. If this option is not specified. By default, logging will be output to syslog.\n-s [fork | thread] Select request handling method, thread will be used by default";
 
+void handleConnection(int client_sock)
+{
+	const int buffersize = 1024;
+	char * client_message = calloc(sizeof(char),buffersize);
+	int read_size;
+	while( ( read_size = recv(client_sock , client_message, buffersize, 0)) > 0)
+	{
+		int offset = 0;
+		char * message = calloc(sizeof(char),buffersize);
+		int returncode = 1;
+		if(client_message[0] == 'H')
+		{
+			printf("%s\n","HEAD REQUEST");
+			while(returncode)
+			{
+				returncode = HEAD(client_message,message,buffersize,offset++);
+				write(client_sock,message,strlen(message));
+			}
+		}
+		else if(client_message[0] == 'G')
+		{
+			printf("%s\n","GET REQUEST");
+			while(returncode)
+			{
+				returncode = GET(client_message,message,buffersize,offset++);
+				write(client_sock,message,strlen(message));
+			}
+		}
+
+		free(message);
+	}
+}
+
+
 void printUsage(char ** argv)
 {
 	printf("%s%s%s\n\n","Usage : ", argv[0], " flags ");
@@ -36,7 +70,7 @@ int main(int argc, char ** argv)
 	int threadID, something;
 	for(int i = 0; i < THREADPOOL_MAX; i++)
 	{
-		something = pthread_create(&threads[i],NULL,printHello, i);
+		something = pthread_create(&threads[i],NULL,(void *)printHello,(void *)i);
 		if(something) //Check for error code
 		{
 			printf("Error from pthread_create");
@@ -73,33 +107,39 @@ int main(int argc, char ** argv)
 	listen(socket_desc, 3);
 	c = sizeof(struct sockaddr_in);
 
+	//Creation ends here
+	//Output should be client_sock and client_message
+
+
 	client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
 	if(client_sock < 0)
 	{
 		perror("Accept failed");
 		return 1;
 	}
-	while( ( read_size = recv(client_sock , client_message, 2000, 0)) > 0)
+	handleConnection(client_sock);
+	/*while( ( read_size = recv(client_sock , client_message, 2000, 0)) > 0)
 	{
-		char head[10] = "HEAD";
-		char get[10] = "GET";
-		char * message = NULL;
-		//printf("%s\n",client_message);
-		//printf("FIRST LETTER : %c\n", client_message[0]);
-		message = calloc(sizeof(char),20);
+		const int buffersize = 1024;
+		int offset = 0;
+		char * message = calloc(sizeof(char),buffersize);
 		if(client_message[0] == 'H')
-			HEAD(message,20);
+		{
+			printf("%s\n","HEAD REQUEST");
+			
+			while(HEAD(client_message,message,buffersize,offset++))
+				write(client_sock,message,strlen(message));
+		}
+
 		if(client_message[0] == 'G')
 		{
-			GET(message,20);
 			printf("%s\n","GET REQUEST");
+			while(GET(client_message,message,buffersize,offset++))
+				write(client_sock,message,strlen(message));
 		}
-		char * lol = "HTTP/1.1 200 OK";
-		char * lol2 = "\n<html>\n<header>\n<title>This is title</title>\n</header>\n<body>Hello world\n</body>\n</html>";
-		write(client_sock,lol,strlen(lol));
-		write(client_sock,lol2,strlen(lol2));
+
 		free(message);
-	}
+	}*/
 
 
 	printUsage(argv);

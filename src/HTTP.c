@@ -3,21 +3,21 @@
 
 
 //Return status code
-int GET(char * buffer, int buffersize)
+int GET(char * client_message, char * buffer, int buffersize,int offset)
 {
 	buffer[0] = 'G';
 	buffer[1] = 'E';
 	buffer[2] = 'T';
 
-	return 1;
+	return 0;
 }
 
-int HEAD(char * buffer, int buffersize)
+int HEAD(char * client_message, char * buffer, int buffersize,int offset)
 {
 	buffer[0] = 'H';
 	buffer[1] = 'E';
 	buffer[2] = 'A';
 	buffer[3] = 'D';
 	
-	return 1;
+	return 0;
 }
