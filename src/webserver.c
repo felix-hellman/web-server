@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
-
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include "HTTP.h"
 
 const int THREADPOOL_MAX = 4;
 
@@ -39,14 +43,58 @@ int main(int argc, char ** argv)
 			exit(-1);
 		}
 	}
-	threadCleanup(threads);
-	printUsage(argv);
-	pthread_exit(NULL);
-
+	
 
 	//Do some socket stuff here lol
+	int socket_desc, client_sock, c, read_size;
+	struct sockaddr_in server, client;
+	char client_message[2000];
+
+	socket_desc = socket(AF_INET, SOCK_STREAM,0);
+	if(socket_desc == -1)
+	{
+		printf("Could not create socket");
+	}
+
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port = htons(8888);
+
+	if(bind(socket_desc,(struct sockaddr *)&server, sizeof(server)) < 0)
+	{
+		perror("bind failed. Error");
+		return 1;
+	}
+	printf("%s\n","Socket created");
+
+	
+	threadCleanup(threads);
+
+	listen(socket_desc, 3);
+	c = sizeof(struct sockaddr_in);
+
+	client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
+	if(client_sock < 0)
+	{
+		perror("Accept failed");
+		return 1;
+	}
+	while( ( read_size = recv(client_sock , client_message, 2000, 0)) > 0)
+	{
+		char head[10] = "HEAD";
+		char get[10] = "GET";
+		char * message = NULL;
+		message = calloc(sizeof(char),20);
+		if(client_message[0] == 'H')
+			HEAD(message,20);
+		if(client_message[0] == 'G')
+			GET(message,20);
+		write(client_sock,message,strlen(message));
+		free(message);
+	}
 
 
-
+	printUsage(argv);
+	pthread_exit(NULL);
 	return 0;
 }
