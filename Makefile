@@ -1,9 +1,20 @@
-LFLAGS=-pthread
 CC=gcc
-CFLAGS=-std=c11
-All: HTTP.o
-	$(CC) $(CFLAGS) -o webserver src/webserver.c $(LFLAGS) HTTP.o
-	rm HTTP.o
+CFLAGS=-std=c11 -Wall -Iinclude
+LFLAGS=-pthread
+SRCFOLDER=src
+OBJFOLDER=objects
+INCLFOLDER=include
+C_FILES=$(wildcard $(SRCFOLDER)/*.c)
+OBJ_FILES=$(addprefix $(OBJFOLDER)/, $(notdir $(C_FILES:.c=.o)))
+HEADER_FILES=$(wildcard $(INCLFOLDER)/*.h)
 
-HTTP.o:
-	$(CC) $(CFLAGS) -c src/HTTP.c
+all: webserver
+
+webserver: $(OBJ_FILES) 
+	$(CC) $(CFLAGS) $(LFLAGS) $^ -o $@
+
+$(OBJFOLDER)/%.o: $(SRCFOLDER)/%.c $(HEADER_FILES)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f webserver $(OBJ_FILES)
