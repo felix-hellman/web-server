@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "../include/HTTP.h"
+#include "HTTP.h"
 
 const int THREADPOOL_MAX = 4;
 

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "../include/HTTP.h"
+#include "HTTP.h"
 
 
 //Return status code
