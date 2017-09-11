@@ -84,12 +84,20 @@ int main(int argc, char ** argv)
 		char head[10] = "HEAD";
 		char get[10] = "GET";
 		char * message = NULL;
+		//printf("%s\n",client_message);
+		//printf("FIRST LETTER : %c\n", client_message[0]);
 		message = calloc(sizeof(char),20);
 		if(client_message[0] == 'H')
 			HEAD(message,20);
 		if(client_message[0] == 'G')
+		{
 			GET(message,20);
-		write(client_sock,message,strlen(message));
+			printf("%s\n","GET REQUEST");
+		}
+		char * lol = "HTTP/1.1 200 OK";
+		char * lol2 = "\n<html>\n<header>\n<title>This is title</title>\n</header>\n<body>Hello world\n</body>\n</html>";
+		write(client_sock,lol,strlen(lol));
+		write(client_sock,lol2,strlen(lol2));
 		free(message);
 	}
 
