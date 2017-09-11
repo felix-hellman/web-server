@@ -1,2 +1,5 @@
+LFLAGS=-pthread
+CC=gcc
+CFLAGS=-std=c11
 All:
-	gcc -o webserver src/webserver.c 
+	$(CC) $(CFLAGS) -o webserver src/webserver.c $(LFLAGS)
