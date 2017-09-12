@@ -39,6 +39,7 @@ int main(int argc, char ** argv)
 	int threadIndex = 0;
 	while(1)
 	{
+		printf("%s\n","Listening");
 		listen(socket_desc, 3);
 		c = sizeof(struct sockaddr_in);
 

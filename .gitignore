@@ -1,0 +1,8 @@
+*
+!/include
+!/objects
+!/src
+!Makefile
+!*.c
+!*.h
+!.gitignore
