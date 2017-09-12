@@ -13,8 +13,8 @@
 
 
 void handleConnection(int client_sock);
+void spawn_connection(pthread_t thread, int client_sock);
 void printUsage(char ** argv);
-void *printHello(int number); //This is mainly for debugging reasons @ pthread
 void threadCleanup(pthread_t *threads);
 
 

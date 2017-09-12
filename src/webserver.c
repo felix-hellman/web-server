@@ -13,22 +13,9 @@ int THREADPOOL_MAX = 4;
 int main(int argc, char ** argv)
 {
 	pthread_t threads[THREADPOOL_MAX];
-	int threadID, something;
-	for(int i = 0; i < THREADPOOL_MAX; i++)
-	{
-		something = pthread_create(&threads[i],NULL,(void *)printHello,(void *)i);
-		if(something) //Check for error code
-		{
-			printf("Error from pthread_create");
-			exit(-1);
-		}
-	}
 
-
-	//Do some socket stuff here lol
-	int socket_desc, client_sock, c, read_size;
+	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
-	char client_message[2000];
 
 
 	socket_desc = socket(AF_INET, SOCK_STREAM,0);
@@ -63,7 +50,6 @@ int main(int argc, char ** argv)
 		printf("Spawning thread for index %d\n", threadIndex);
 		spawn_connection(threads[threadIndex],client_sock);
 		threadIndex = (threadIndex+1)%THREADPOOL_MAX;
-		//handleConnection(client_sock); //Concurrency for this
 	}
 	threadCleanup(threads);
 	printUsage(argv);

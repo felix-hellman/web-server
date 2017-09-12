@@ -54,11 +54,6 @@ void printUsage(char ** argv)
 	printf("%s\n",helptext);
 }
 
-void *printHello(int number)
-{
-	printf("Hello from thread %d\n",number);
-}
-
 void threadCleanup(pthread_t *threads)
 {
 	for(int i = 0; i < THREADPOOL_MAX; i++)
