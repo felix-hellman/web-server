@@ -13,10 +13,11 @@ int THREADPOOL_MAX = 4;
 int main(int argc, char ** argv)
 {
 	pthread_t threads[THREADPOOL_MAX];
-
+	struct settingsdata settings;
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
 
+	handleArguments(&settings,argc,argv);
 
 	socket_desc = socket(AF_INET, SOCK_STREAM,0);
 	if(socket_desc == -1)
@@ -26,7 +27,7 @@ int main(int argc, char ** argv)
 
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(8888);
+	server.sin_port = htons(settings.listeningport);
 
 	if(bind(socket_desc,(struct sockaddr *)&server, sizeof(server)) < 0)
 	{
@@ -48,11 +49,15 @@ int main(int argc, char ** argv)
 			return 1;
 		}
 		printf("Spawning thread for index %d\n", threadIndex);
-		spawn_connection(threads[threadIndex],client_sock);
+		spawn_connection(&threads[threadIndex],client_sock);
 		threadIndex = (threadIndex+1)%THREADPOOL_MAX;
 	}
+
+	/*Some cleanup stuff*/
+
 	threadCleanup(threads);
-	printUsage(argv);
 	pthread_exit(NULL);
+	if(settings.filepath)
+		free(settings.filepath);
 	return 0;
 }

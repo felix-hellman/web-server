@@ -2,16 +2,46 @@
 
 static int THREADPOOL_MAX = 4;
 
+void handleArguments(struct settingsdata * settings, int argc, char ** argv)
+{
+	settings->filepath = NULL;
+	settings->listeningport = 8888;
+	for(int i = 0; i < argc; i++)
+	{
+		if(strcmp(argv[i],"-p") == 0)
+		{
+			if(i+1 >= argc)
+				printf("%s\n", "No port specified");
+			else
+				settings->listeningport = atoi(argv[i+1]);
+		}
+		else if(strcmp(argv[i], "-l") == 0)
+		{
+			if(i+1 >= argc)
+				printf("%s\n","No filepath for log specified");
+			else
+			{
+				int size = strlen(argv[i+1]);
+				settings->filepath = calloc(sizeof(char),size);
+				for(int x = 0; x < size; x++)
+				{
+					settings->filepath[x] = argv[i+1][x];
+				}
+				printf("%s\n",settings->filepath);
+			}
+		}
+	}
+}
 
 void handleConnection(int client_sock)
 {
 	const int buffersize = 1024;
 	char * client_message = calloc(sizeof(char),buffersize);
 	int read_size;
+	char * message = calloc(sizeof(char),buffersize);
 	while( ( read_size = recv(client_sock , client_message, buffersize, 0)) > 0)
 	{
 		int offset = 0;
-		char * message = calloc(sizeof(char),buffersize);
 		int returncode = 1;
 		if(client_message[0] == 'H')
 		{
@@ -31,18 +61,18 @@ void handleConnection(int client_sock)
 				write(client_sock,message,strlen(message));
 			}
 		}
-
-		free(message);
 	}
+	free(message);
 }
 
-void spawn_connection(pthread_t thread, int client_sock)
+void spawn_connection(pthread_t * thread, int client_sock)
 {
-	int errorcode = pthread_create(&thread,NULL,(void *)handleConnection,(void *) client_sock);
+	int errorcode = pthread_create(thread,NULL,(void *)handleConnection,(void *) client_sock);
 	if(errorcode)
 	{
 		printf("Error from pthread_create");
 	}
+	printf("Done with spawn %d\n", client_sock);
 }
 
 
