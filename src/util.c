@@ -83,13 +83,14 @@ void handleArguments(struct settingsdata * settings, int argc, char ** argv)
 	}
 }
 
-void handleConnection(int client_sock) //TODO add id for threads for basic polling
+void handleConnection(struct thread_data * data) //TODO add id for threads for basic polling
 {
+	data->working = 1;
 	const int buffersize = 1024;
 	char * client_message = calloc(sizeof(char),buffersize);
 	int read_size;
 	char * message = calloc(sizeof(char),buffersize);
-	while( ( read_size = recv(client_sock , client_message, buffersize, 0)) > 0)
+	while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
 	{
 		int offset = 0;
 		int returncode = 1;
@@ -99,7 +100,7 @@ void handleConnection(int client_sock) //TODO add id for threads for basic polli
 			while(returncode)
 			{
 				returncode = HEAD(client_message,message,buffersize,offset++);
-				write(client_sock,message,strlen(message));
+				write(data->clientsocket,message,strlen(message));
 			}
 		}
 		else if(client_message[0] == 'G')
@@ -108,21 +109,23 @@ void handleConnection(int client_sock) //TODO add id for threads for basic polli
 			while(returncode)
 			{
 				returncode = GET(client_message,message,buffersize,offset++);
-				write(client_sock,message,strlen(message));
+				write(data->clientsocket,message,strlen(message));
 			}
 		}
 	}
 	free(message);
+	data->working = 0;
+	data->clientsocket = 0;
 }
 
-void spawn_connection(pthread_t * thread, int client_sock)
+void spawn_connection(pthread_t * thread,struct thread_data * data)
 {
-	int errorcode = pthread_create(thread,NULL,(void *)handleConnection,(void *) client_sock);
+	int errorcode = pthread_create(thread,NULL,(void *)handleConnection,(void *) data);
 	if(errorcode)
 	{
 		printf("Error from pthread_create");
 	}
-	printf("Done with spawn %d\n", client_sock);
+	printf("Done with spawn %d\n", data->clientsocket);
 }
 
 

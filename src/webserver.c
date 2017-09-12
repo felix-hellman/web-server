@@ -13,6 +13,11 @@ int THREADPOOL_MAX = 4;
 int main(int argc, char ** argv)
 {
 	pthread_t threads[THREADPOOL_MAX];
+	struct thread_data t_data[THREADPOOL_MAX];
+
+	for(int i = 0; i < 4; i++)
+		t_data->working = 0;
+
 	struct settingsdata settings;
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
@@ -50,8 +55,12 @@ int main(int argc, char ** argv)
 			return 1;
 		}
 		printf("Spawning thread for index %d\n", threadIndex);
-		spawn_connection(&threads[threadIndex],client_sock);
-		threadIndex = (threadIndex+1)%THREADPOOL_MAX;
+		while(t_data[threadIndex].working)
+		{
+			threadIndex = (threadIndex+1)%THREADPOOL_MAX;
+		}
+		t_data[threadIndex].clientsocket = client_sock;
+		spawn_connection(&threads[threadIndex],&t_data[threadIndex]);
 	}
 
 	/*Some cleanup stuff*/
