@@ -14,7 +14,7 @@ struct settingsdata
 {
   int listeningport;
   char * filepath;
-  char requestHandlingMode; //Should only be P for now (P = PTHREADS)
+  char requestHandlingMode; //Should only be T for now (T = THREADS)
   int daemonMode; // 1 for yes, 0 for no
 };
 

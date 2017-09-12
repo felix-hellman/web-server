@@ -2,10 +2,28 @@
 
 static int THREADPOOL_MAX = 4;
 
+//Return 1 if argument is invalid
+int invalidArgument(char * argument)
+{
+	char * invalidList[] = {"-p","-l","-d","-s","-",".",".."};
+	for(int i = 0; i < 7; i++)
+	{
+		if(strcmp(argument,invalidList[i]) == 0)
+		{
+			return 1;
+			printf("Argument : %s : is invalid\n", argument);
+		}
+
+	}
+	return 0;
+}
+
 void handleArguments(struct settingsdata * settings, int argc, char ** argv)
 {
 	settings->filepath = NULL;
 	settings->listeningport = 8888;
+	settings->daemonMode = 0;
+	settings->requestHandlingMode = 'P';
 	for(int i = 0; i < argc; i++)
 	{
 		if(strcmp(argv[i],"-p") == 0)
@@ -13,7 +31,11 @@ void handleArguments(struct settingsdata * settings, int argc, char ** argv)
 			if(i+1 >= argc)
 				printf("%s\n", "No port specified");
 			else
-				settings->listeningport = atoi(argv[i+1]);
+			{
+				if(!invalidArgument(argv[i+1]))
+					settings->listeningport = atoi(argv[i+1]);
+			}
+
 		}
 		else if(strcmp(argv[i], "-l") == 0)
 		{
@@ -21,13 +43,41 @@ void handleArguments(struct settingsdata * settings, int argc, char ** argv)
 				printf("%s\n","No filepath for log specified");
 			else
 			{
-				int size = strlen(argv[i+1]);
-				settings->filepath = calloc(sizeof(char),size);
-				for(int x = 0; x < size; x++)
+				if(!invalidArgument(argv[i+1]))
 				{
-					settings->filepath[x] = argv[i+1][x];
+					int size = strlen(argv[i+1]);
+					settings->filepath = calloc(sizeof(char),size);
+					for(int x = 0; x < size; x++)
+					{
+						settings->filepath[x] = argv[i+1][x];
+					}
+					printf("%s\n",settings->filepath);
 				}
-				printf("%s\n",settings->filepath);
+			}
+		}
+		else if(strcmp(argv[i], "-d") == 0)
+		{
+			settings->daemonMode = 1;
+		}
+		else if(strcmp(argv[i], "-s") == 0)
+		{
+			if(i+1 >= argc)
+			{
+				printf("%s\n","No request handling mode set");
+			}
+			else
+			{
+				if(!invalidArgument(argv[i+1]))
+				{
+					if (strcmp(argv[i+1],"fork"))
+					{
+						settings->requestHandlingMode = 'F';
+					}
+					if (strcmp(argv[i+1],"thread"))
+					{
+						settings->requestHandlingMode = 'T';
+					}
+				}
 			}
 		}
 	}
