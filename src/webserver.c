@@ -12,17 +12,28 @@ int THREADPOOL_MAX = 4;
 
 int main(int argc, char ** argv)
 {
+	struct settingsdata settings;
+	handleArguments(&settings,argc,argv);
+	if(settings.daemonMode == 1)
+	{
+		int pid = fork();
+		close(STDOUT_FILENO);
+	        close(STDERR_FILENO);
+		if(pid != 0)
+			exit(0);
+	}
+
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
 
 	for(int i = 0; i < 4; i++)
 		t_data->working = 0;
 
-	struct settingsdata settings;
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
 
-	handleArguments(&settings,argc,argv);
+
+	
 
 	socket_desc = socket(AF_INET, SOCK_STREAM,0);
 	if(socket_desc == -1)
