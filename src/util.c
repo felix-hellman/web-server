@@ -83,7 +83,7 @@ void handleArguments(struct settingsdata * settings, int argc, char ** argv)
 	}
 }
 
-void handleConnection(int client_sock)
+void handleConnection(int client_sock) //TODO add id for threads for basic polling
 {
 	const int buffersize = 1024;
 	char * client_message = calloc(sizeof(char),buffersize);
