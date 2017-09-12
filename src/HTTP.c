@@ -18,6 +18,6 @@ int HEAD(char * client_message, char * buffer, int buffersize,int offset)
 	buffer[1] = 'E';
 	buffer[2] = 'A';
 	buffer[3] = 'D';
-	
+
 	return 0;
 }
