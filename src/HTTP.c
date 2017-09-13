@@ -3,7 +3,7 @@
 #include <string.h>
 #include "HTTP.h"
 
-int HTTP_Request(char *client_message, char **response, char *buffer, int buffersize, int offset) {
+int HTTP_Request(char *request, char **response, char *buffer, int buffersize, int offset) {
 //Switch case
 //  GET
 //  HEAD
@@ -16,14 +16,14 @@ int HTTP_Request(char *client_message, char **response, char *buffer, int buffer
 int GET(char * client_message, char * buffer, int buffersize,int offset) {
     //char *filepath = extractFilepath(client_message);
     char content[MAX_FSIZE];
-    FILE *file = fopen("var/www/index.html", "r");
+    FILE *file = fopen("/var/www/index.html", "r");
     char ch;
     int i = 0;
     while((ch = fgetc(file)) != EOF && i < (MAX_FSIZE-1))
 	content[i++] = ch;
     content[i] = '\0';
     fclose(file);
-    
+
     char response[MAX_HSIZE + MAX_FSIZE];
     int length = strlen(content);
     createHeader(response, length);
