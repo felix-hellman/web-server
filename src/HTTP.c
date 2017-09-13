@@ -14,7 +14,8 @@ int HTTP_Request(char *request, char **response, char *buffer, int buffersize, i
 }
 
 int GET(char * client_message, char * buffer, int buffersize,int offset) {
-    //char *filepath = extractFilepath(client_message);
+    char **filepath = extractFilepath(client_message);
+    printf("%s\n", *filepath);
     char content[MAX_FSIZE];
     FILE *file = fopen("/var/www/index.html", "r");
     char ch;
@@ -38,24 +39,27 @@ int GET(char * client_message, char * buffer, int buffersize,int offset) {
 
 int HEAD(char * client_message, char * buffer, int buffersize,int offset) {
     createHeader(buffer, 0);
-    
+
     return 0;
 }
 
 char **extractFilepath(char * request) {
-    /*char filename[100];
+    char filename[100];
     int i = 4;
     int j = 0;
     while(request[i] != ' ' && j < 99)
-	filename[j++] = request[i++];
+	     filename[j++] = request[i++];
     filename[j] = '\0';
-    
-    char fullpath[120];
-    strcpy(fullpath, WWW);
-    strcat(fullpath, filename);
-    
-    return fullpath;*/
-    return NULL;
+
+    char **fullpath = calloc(1, sizeof(char*));
+    *fullpath = calloc(120, sizeof(char));
+    printf("%s\n", "debug1");
+    strcpy(*fullpath, WWW);
+    printf("%s\n", "debug2");
+    strcat(*fullpath, filename);
+    printf("%s\n", *fullpath);
+
+    return fullpath;
 }
 
 //TODO correct date, error code
