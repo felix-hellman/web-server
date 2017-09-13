@@ -5,14 +5,32 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <signal.h> 
 #include "HTTP.h"
 #include "util.h"
 
 int THREADPOOL_MAX = 4;
 
+struct sockaddr_in * listeningportptr = NULL;
+
+void handle_signal(int signal)
+{
+	printf("Signal : %d\n",signal);
+	exit(0);
+}
+
 int main(int argc, char ** argv)
 {
 	struct settingsdata settings;
+   	struct sigaction sa;
+	sa.sa_handler = &handle_signal;
+	sigfillset(&sa.sa_mask);
+
+	if(sigaction(SIGINT, &sa, NULL) == -1)
+	{
+		perror("Club can't club me");
+	}
+
 	handleArguments(&settings,argc,argv);
 	if(settings.daemonMode == 1)
 	{
@@ -32,7 +50,7 @@ int main(int argc, char ** argv)
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
 
-
+	listeningportptr = &server;
 	
 
 	socket_desc = socket(AF_INET, SOCK_STREAM,0);
@@ -72,6 +90,7 @@ int main(int argc, char ** argv)
 		}
 		t_data[threadIndex].clientsocket = client_sock;
 		spawn_connection(&threads[threadIndex],&t_data[threadIndex]);
+		
 	}
 
 	/*Some cleanup stuff*/

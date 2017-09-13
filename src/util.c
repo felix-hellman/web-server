@@ -88,17 +88,20 @@ void handleConnection(struct thread_data * data)
 	data->working = 1;
 	const int buffersize = 1024;
 	char * client_message = calloc(sizeof(char),buffersize);
-	int read_size;
 	char * message = calloc(sizeof(char),buffersize);
-	while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0);
 	char * response = NULL;
-	int offset = 0;
-	int returncode = 1;
-	do
+
+	int read_size;
+	while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
 	{
-		returncode = HTTP_Request(client_message,&response,message,buffersize,offset++);
-		write(data->clientsocket,message,strlen(message));
-	} while(returncode);
+		int offset = 0;
+		int returncode = 1;
+		do
+		{
+			returncode = HTTP_Request(client_message,&response,message,buffersize,offset++);
+			write(data->clientsocket,message,strlen(message));
+		} while(returncode);
+	}
 	if(response)
 		free(response);
 	free(message);
