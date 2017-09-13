@@ -3,36 +3,66 @@
 #include <string.h>
 #include "HTTP.h"
 
-//TODO read filename, check if size > buffersize
-int GET(char * client_message, char * buffer, int buffersize,int offset)
-{
-    char header[MAX_HSIZE];
-    createHeader(header);
-    char response[MAX_FSIZE + MAX_HSIZE];
-    strcpy(response, header);
+int HTTP_Request(char *client_message, char **response, char *buffer, int buffersize, int offset) {
+//Switch case
+//  GET
+//  HEAD
+//  POST/PUT/etc: not implemented
+//  default: bad request
+//return 0 or 1
+    return 0;
+}
 
-    FILE *file = fopen("index.html", "r");
+int GET(char * client_message, char * buffer, int buffersize,int offset) {
+    //char *filepath = extractFilepath(client_message);
+    char content[MAX_FSIZE];
+    FILE *file = fopen("var/www/index.html", "r");
     char ch;
-    int i = strlen(header);
-    while((ch = fgetc(file)) != EOF && i < MAX_FSIZE)
-	response[i++] = ch;
-    response[i] = '\0';
+    int i = 0;
+    while((ch = fgetc(file)) != EOF && i < (MAX_FSIZE-1))
+	content[i++] = ch;
+    content[i] = '\0';
     fclose(file);
     
+    char response[MAX_HSIZE + MAX_FSIZE];
+    int length = strlen(content);
+    createHeader(response, length);
+    strcat(response, content);
     memcpy(buffer, &response[buffersize * offset], buffersize);
 
-    return 0;
+    if (strlen(response) < (offset+1)*buffersize)
+	return 0;
+    else
+	return 1;
 }
 
-int HEAD(char * client_message, char * buffer, int buffersize,int offset)
-{
-    createHeader(buffer);
+int HEAD(char * client_message, char * buffer, int buffersize,int offset) {
+    createHeader(buffer, 0);
     
     return 0;
 }
 
-//TODO our own header
-void createHeader(char *header)
-{
-    strcpy(header, "HTTP/1.1 200 OK\nDate: Tue, 12 Sep 2017 19:49:32 GMT\nServer: Apache/2.4.10 (Raspbian)\nLast-Modified: Sun, 13 Nov 2016 21:54:02 GMT\nETag: \"c8-54135c2e00c0b\"\nAccept-Ranges: bytes\nContent-Length: 200\nVary: Accept-Encoding\nContent-Type: text/html\n");
+char **extractFilepath(char * request) {
+    /*char filename[100];
+    int i = 4;
+    int j = 0;
+    while(request[i] != ' ' && j < 99)
+	filename[j++] = request[i++];
+    filename[j] = '\0';
+    
+    char fullpath[120];
+    strcpy(fullpath, WWW);
+    strcat(fullpath, filename);
+    
+    return fullpath;*/
+    return NULL;
+}
+
+//TODO correct date, error code
+void createHeader(char *header, int length) {
+    strcpy(header, "HTTP/1.0 200 OK\nDate: Tue, 12 Sep 2017 19:49:32 GMT\nServer: AdamFelix\nContent-Length: ");
+    char lengthstr[12];
+    sprintf(lengthstr, "%d", length);
+    strcat(header, lengthstr);
+    strcat(header, "\nContent-Type: text/html\n\n");
 }
