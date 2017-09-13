@@ -10,7 +10,7 @@ int HTTP_Request(char *request, char **response, char *buffer, int buffersize, i
 //  POST/PUT/etc: not implemented
 //  default: bad request
 //return 0 or 1
-    return GET(client_message,buffer,buffersize,offset);
+    return GET(request,buffer,buffersize,offset);
 }
 
 int GET(char * client_message, char * buffer, int buffersize,int offset) {
