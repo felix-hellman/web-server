@@ -83,37 +83,26 @@ void handleArguments(struct settingsdata * settings, int argc, char ** argv)
 	}
 }
 
-void handleConnection(struct thread_data * data) //TODO add id for threads for basic polling
+void handleConnection(struct thread_data * data)
 {
 	data->working = 1;
 	const int buffersize = 1024;
 	char * client_message = calloc(sizeof(char),buffersize);
 	int read_size;
 	char * message = calloc(sizeof(char),buffersize);
-	while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
+	while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0);
+	char * response = NULL;
+	int offset = 0;
+	int returncode = 1;
+	do
 	{
-		int offset = 0;
-		int returncode = 1;
-		if(client_message[0] == 'H')
-		{
-			printf("%s\n","HEAD REQUEST");
-			while(returncode)
-			{
-				returncode = HEAD(client_message,message,buffersize,offset++);
-				write(data->clientsocket,message,strlen(message));
-			}
-		}
-		else if(client_message[0] == 'G')
-		{
-			printf("%s\n","GET REQUEST");
-			while(returncode)
-			{
-				returncode = GET(client_message,message,buffersize,offset++);
-				write(data->clientsocket,message,strlen(message));
-			}
-		}
-	}
+		returncode = HTTP_Request(client_message,&response,message,buffersize,offset++);
+		write(data->clientsocket,message,strlen(message));
+	} while(returncode);
+	if(response)
+		free(response);
 	free(message);
+	free(client_message);
 	data->working = 0;
 	data->clientsocket = 0;
 }
