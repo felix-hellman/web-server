@@ -98,6 +98,7 @@ void handleConnection(struct thread_data * data)
 		int returncode = 1;
 		do
 		{
+			memset(message,0,buffersize);
 			returncode = HTTP_Request(client_message,&response,message,buffersize,offset++);
 			write(data->clientsocket,message,strlen(message));
 		} while(returncode);
@@ -106,6 +107,8 @@ void handleConnection(struct thread_data * data)
 		free(response);
 	free(message);
 	free(client_message);
+	shutdown(data->clientsocket,SHUT_WR);
+	close(data->clientsocket);
 	data->working = 0;
 	data->clientsocket = 0;
 }

@@ -29,7 +29,7 @@ int main(int argc, char ** argv)
 
 	if(sigaction(SIGINT, &sa, NULL) == -1)
 	{
-		perror("Club can't club me");
+		perror("Can't handle sigint");
 	}
 
 	handleArguments(&settings,argc,argv);
@@ -89,7 +89,6 @@ int main(int argc, char ** argv)
 		}
 		t_data[threadIndex].clientsocket = client_sock;
 		spawn_connection(&threads[threadIndex],&t_data[threadIndex]);
-
 	}
 
 	/*Some cleanup stuff*/
