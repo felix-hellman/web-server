@@ -4,8 +4,9 @@
 
 #define KB(x)   ((size_t) (x) << 10)
 #define MB(x)   ((size_t) (x) << 20)
-#define MAX_FSIZE MB(2)
-#define MAX_HSIZE KB(1)
+#define PATH_SIZE KB(1)
+#define FILE_SIZE MB(2)
+#define HEADER_SIZE KB(1)
 #define WWW "/var/www"
 
 /*
@@ -17,8 +18,7 @@
 int HTTP_Request(char *request, char **response, char *buffer, int buffersize, int offset);
 int GET(char *request, char *buffer, int buffersize, int offset);
 int HEAD(char *request, char *buffer, int buffersize, int offset);
+int readFile(char *filepath, char *content);
 int extractFilename(char *request, char *filepath);
-void createHeader(char * header, int length);
-//TODO
-//openFile() return error if not found or no permission (403&404)
+void createHeader(char *header, int length);
 #endif
