@@ -4,6 +4,7 @@
 #include "HTTP.h"
 
 int HTTP_Request(char *request, char **response, char *buffer, int buffersize, int offset) {
+//TODO
 //Switch case
 //  GET
 //  HEAD
@@ -15,9 +16,10 @@ int HTTP_Request(char *request, char **response, char *buffer, int buffersize, i
 
 int GET(char *request, char *buffer, int buffersize, int offset) {
     char filepath[1024];
-    int statusCode = extractFilepath(request, filepath);
-
+    extractFilename(request, filepath);
     char content[MAX_FSIZE];
+    
+    //TODO check permission, file existence
     FILE *file = fopen(filepath, "r");
     char ch;
     int i = 0;
@@ -44,18 +46,27 @@ int HEAD(char *request, char *buffer, int buffersize, int offset) {
     return 0;
 }
 
-//TODO check permission, file existence
-int extractFilepath(char *request, char *filepath) {
+int extractFilename(char *request, char *filepath) {
     int statusCode = 200;
-    strcpy(filepath, WWW);
-    int i = 4;
-    int j = strlen(WWW);
-    while(request[i] != ' ' && request[i] != '\n' && request[i] != '\r' && request[i] != '\\' && j < 1024) //Bryt ut till funktion validURLchar(request[i])
-	filepath[j++] = request[i++];
-    filepath[j] = '\0';
+    int namelen = 1024 - strlen(WWW);
+    char *filename = calloc(namelen, sizeof(char));
     
+    int i = 4; //Works for GET but not POST
+    int j = 0;
+    while(request[i] != ' ' && request[i] != '\n' && request[i] != '\r' && request[i] != '\\' && j < namelen - 1) //TODO Bryt ut till funktion validURLchar(request[i])
+	filename[j++] = request[i++];
+    filename[j] = '\0';
+    
+
+    if(filename[strlen(filename)-1] == '/')
+	strcat(filename, "index.html"); //possible overflow
     if(request[i] == '\\' || request[i] == '\n' || request[i] == '\r')
 	statusCode = 501;
+    
+    strcpy(filepath, WWW);
+    strcat(filepath, filename);
+    free(filename);
+
     return statusCode;
 }
 
