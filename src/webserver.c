@@ -5,17 +5,18 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <signal.h> 
+#include <signal.h>
 #include "HTTP.h"
 #include "util.h"
 
 int THREADPOOL_MAX = 4;
 
-struct sockaddr_in * listeningportptr = NULL;
-
+int * socket_desc_ptr = NULL;
 void handle_signal(int signal)
 {
 	printf("Signal : %d\n",signal);
+	shutdown(*socket_desc_ptr,SHUT_WR);
+	close(*socket_desc_ptr);
 	exit(0);
 }
 
@@ -36,7 +37,7 @@ int main(int argc, char ** argv)
 	{
 		int pid = fork();
 		close(STDOUT_FILENO);
-	        close(STDERR_FILENO);
+	  close(STDERR_FILENO);
 		if(pid != 0)
 			exit(0);
 	}
@@ -50,10 +51,8 @@ int main(int argc, char ** argv)
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
 
-	listeningportptr = &server;
-	
-
 	socket_desc = socket(AF_INET, SOCK_STREAM,0);
+	socket_desc_ptr = &socket_desc;
 	if(socket_desc == -1)
 	{
 		printf("Could not create socket");
@@ -90,7 +89,7 @@ int main(int argc, char ** argv)
 		}
 		t_data[threadIndex].clientsocket = client_sock;
 		spawn_connection(&threads[threadIndex],&t_data[threadIndex]);
-		
+
 	}
 
 	/*Some cleanup stuff*/

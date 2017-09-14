@@ -11,7 +11,7 @@ int invalidArgument(char * argument)
 		if(strcmp(argument,invalidList[i]) == 0)
 		{
 			return 1;
-			printf("Argument : %s : is invalid\n", argument);
+			printf("Argument : %s is invalid\n", argument);
 		}
 
 	}
