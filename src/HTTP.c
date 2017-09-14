@@ -13,18 +13,19 @@ int HTTP_Request(char *request, char **response, char *buffer, int buffersize, i
     return GET(request,buffer,buffersize,offset);
 }
 
-int GET(char * client_message, char * buffer, int buffersize,int offset) {
-    char **filepath = extractFilepath(client_message);
-    printf("%s\n", *filepath);
+int GET(char *request, char *buffer, int buffersize, int offset) {
+    char filepath[1024];
+    int statusCode = extractFilepath(request, filepath);
+
     char content[MAX_FSIZE];
-    FILE *file = fopen("/var/www/index.html", "r");
+    FILE *file = fopen(filepath, "r");
     char ch;
     int i = 0;
     while((ch = fgetc(file)) != EOF && i < (MAX_FSIZE-1))
 	content[i++] = ch;
     content[i] = '\0';
     fclose(file);
-
+    
     char response[MAX_HSIZE + MAX_FSIZE];
     int length = strlen(content);
     createHeader(response, length);
@@ -37,29 +38,25 @@ int GET(char * client_message, char * buffer, int buffersize,int offset) {
 	return 1;
 }
 
-int HEAD(char * client_message, char * buffer, int buffersize,int offset) {
+int HEAD(char *request, char *buffer, int buffersize, int offset) {
     createHeader(buffer, 0);
 
     return 0;
 }
 
-char **extractFilepath(char * request) {
-    char filename[100];
+//TODO check permission, file existence
+int extractFilepath(char *request, char *filepath) {
+    int statusCode = 200;
+    strcpy(filepath, WWW);
     int i = 4;
-    int j = 0;
-    while(request[i] != ' ' && j < 99)
-	     filename[j++] = request[i++];
-    filename[j] = '\0';
-
-    char **fullpath = calloc(1, sizeof(char*));
-    *fullpath = calloc(120, sizeof(char));
-    printf("%s\n", "debug1");
-    strcpy(*fullpath, WWW);
-    printf("%s\n", "debug2");
-    strcat(*fullpath, filename);
-    printf("%s\n", *fullpath);
-
-    return fullpath;
+    int j = strlen(WWW);
+    while(request[i] != ' ' && request[i] != '\n' && request[i] != '\r' && request[i] != '\\' && j < 1024) //Bryt ut till funktion validURLchar(request[i])
+	filepath[j++] = request[i++];
+    filepath[j] = '\0';
+    
+    if(request[i] == '\\' || request[i] == '\n' || request[i] == '\r')
+	statusCode = 501;
+    return statusCode;
 }
 
 //TODO correct date, error code

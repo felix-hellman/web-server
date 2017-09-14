@@ -12,10 +12,10 @@
  *	1 = Reading not done
  */
 
-int HTTP_Request(char *client_message, char **response, char *buffer, int buffersize, int offset);
-int GET(char * client_message, char * buffer, int buffersize, int offset);
-int HEAD(char * client_message, char * buffer, int buffersize, int offset);
-char **extractFilepath(char * request);
+int HTTP_Request(char *request, char **response, char *buffer, int buffersize, int offset);
+int GET(char *request, char *buffer, int buffersize, int offset);
+int HEAD(char *request, char *buffer, int buffersize, int offset);
+int extractFilepath(char *request, char *filepath);
 void createHeader(char * header, int length);
 //TODO
 //openFile() return error if not found or no permission (403&404)
