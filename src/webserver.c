@@ -8,10 +8,16 @@
 #include <signal.h>
 #include "HTTP.h"
 #include "util.h"
+#include "structs.h"
 
 int THREADPOOL_MAX = 4;
 
 int * socket_desc_ptr = NULL;
+
+
+/**
+ * @brief Handles sig_int and makes sure the program exits nicely
+ */
 void handle_signal(int signal)
 {
 	printf("Signal : %d\n",signal);
@@ -19,7 +25,9 @@ void handle_signal(int signal)
 	close(*socket_desc_ptr);
 	exit(0);
 }
-
+/**
+ * @brief Listens to listening port and dispatches work when a connection is established
+ */
 int main(int argc, char ** argv)
 {
 	struct settingsdata settings;

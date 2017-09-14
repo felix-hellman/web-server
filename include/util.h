@@ -9,25 +9,38 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "HTTP.h"
+#include "structs.h"
 
-struct settingsdata
-{
-  int listeningport;
-  char * filepath;
-  char requestHandlingMode; //Should only be T for now (T = THREADS)
-  int daemonMode; // 1 for yes, 0 for no
-};
-struct thread_data
-{
- int working;
- int clientsocket;
-};
+/**
+ * @file util.h
+ * @brief Utility functions for the webserver backend
+ */
 
 
+
+
+/**
+ * @brief Handles connections, serves requests and closes sockets when done
+ */
 void handleConnection(struct thread_data * data);
+/**
+ * @brief Calls the handleConnection in a separate thread
+ */
 void spawn_connection(pthread_t * thread, struct thread_data * data);
+/**
+ * @brief Prints the help text on how to use the program
+ */
 void printUsage(char ** argv);
+/**
+ * @brief Joins threads
+ */
 void threadCleanup(pthread_t *threads);
+/**
+ * @brief Handles input arguments from commandline
+ * @param settings a pointer to a struct settingsdata to be filled
+ * @param argc number of arguments
+ * @param argv vector of arguments
+ */
 void handleArguments(struct settingsdata * settings, int argc, char ** argv);
 
 
