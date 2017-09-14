@@ -9,16 +9,11 @@
 #define HEADER_SIZE KB(1)
 #define WWW "/var/www"
 
-/*
- *	return codes
- *	0 = Reading done
- *	1 = Reading not done
- */
-
 int HTTP_Request(char *request, char **response, char *buffer, int buffersize, int offset);
 int GET(char *request, char *buffer, int buffersize, int offset);
 int HEAD(char *request, char *buffer, int buffersize, int offset);
 int readFile(char *filepath, char *content);
 int extractFilename(char *request, char *filepath);
 void createHeader(char *header, int length);
+
 #endif
