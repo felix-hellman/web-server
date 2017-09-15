@@ -41,7 +41,7 @@ void threadCleanup(pthread_t *threads);
  * @param argc number of arguments
  * @param argv vector of arguments
  */
-void handleArguments(struct settingsdata * settings, int argc, char ** argv);
+void handleArguments(struct settingsdata * settings,struct configsettings * defaultsettings, int argc, char ** argv);
 
 
 

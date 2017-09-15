@@ -5,7 +5,12 @@
  * @file structs.h
  * @brief All structs used are defined here
  */
-
+ struct configsettings
+ {
+ 	int port;
+ 	char * rootdirectory;
+ 	char * requesthandling;
+ };
 struct settingsdata
 {
   int listeningport;///< listening port for the program
@@ -28,4 +33,4 @@ struct HTTP_buffer
 };
 
 
-#endif 
+#endif

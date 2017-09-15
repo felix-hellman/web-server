@@ -18,12 +18,12 @@ int invalidArgument(char * argument)
 	return 0;
 }
 
-void handleArguments(struct settingsdata * settings, int argc, char ** argv)
+void handleArguments(struct settingsdata * settings,struct configsettings * defaultsettings, int argc, char ** argv)
 {
 	settings->filepath = NULL;
-	settings->listeningport = 8888;
+	settings->listeningport = defaultsettings->port;
 	settings->daemonMode = 0;
-	settings->requestHandlingMode = 'P';
+	settings->requestHandlingMode = defaultsettings->requesthandling[0];
 	for(int i = 0; i < argc; i++)
 	{
 		if(strcmp(argv[i],"-p") == 0)
@@ -89,7 +89,14 @@ void handleConnection(struct thread_data * data)
 	const int buffersize = 1024;
 	char * client_message = calloc(sizeof(char),buffersize);
 	char * message = calloc(sizeof(char),buffersize);
-	char * response = NULL;
+
+	struct HTTP_buffer httpbuff;
+	httpbuff.buffer = message;
+	httpbuff.buffersize = buffersize;
+	httpbuff.response = NULL;
+	httpbuff.offset = 0;
+	httpbuff.request = client_message;
+
 
 	int read_size;
 	while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
@@ -99,12 +106,13 @@ void handleConnection(struct thread_data * data)
 		do
 		{
 			memset(message,0,buffersize);
-			returncode = HTTP_Request(client_message,&response,message,buffersize,offset++);
+			returncode = HTTP_Request(&httpbuff);
+			offset++;
 			write(data->clientsocket,message,strlen(message));
 		} while(returncode);
 	}
-	if(response)
-		free(response);
+	if(httpbuff.response)
+		free(httpbuff.response);
 	free(message);
 	free(client_message);
 	shutdown(data->clientsocket,SHUT_WR);

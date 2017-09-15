@@ -9,6 +9,7 @@
 #include "HTTP.h"
 #include "util.h"
 #include "structs.h"
+#include "configloader.h"
 
 int THREADPOOL_MAX = 4;
 
@@ -30,6 +31,8 @@ void handle_signal(int signal)
  */
 int main(int argc, char ** argv)
 {
+	struct configsettings defaultsettings;
+	loadconfiguration(&defaultsettings);
 	struct settingsdata settings;
    	struct sigaction sa;
 	sa.sa_handler = &handle_signal;
@@ -40,7 +43,7 @@ int main(int argc, char ** argv)
 		perror("Can't handle sigint");
 	}
 
-	handleArguments(&settings,argc,argv);
+	handleArguments(&settings,&defaultsettings,argc,argv);
 	if(settings.daemonMode == 1)
 	{
 		int pid = fork();
