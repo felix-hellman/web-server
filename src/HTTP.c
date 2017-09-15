@@ -6,7 +6,7 @@
 
 extern int errno;
 
-int HTTP_Request(char *request, char **response, char *buffer, int buffersize, int offset)
+int HTTP_Request(HTTP_buffer *HTTP)
 {
 //TODO
 //Switch case
@@ -15,7 +15,7 @@ int HTTP_Request(char *request, char **response, char *buffer, int buffersize, i
 //  POST/PUT/etc: not implemented
 //  default: bad request
 //return 0(done) or 1(continue)
-	return GET(request,buffer,buffersize,offset);
+	return GET(HTTP->request, HTTP->buffer, HTTP->buffersize, HTTP->offset);
 }
 
 //TODO handle those statuscodes

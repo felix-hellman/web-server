@@ -18,7 +18,14 @@ struct thread_data
  int working; ///< is 1 if working and 0 if done with handling a request
  int clientsocket; ///< client socket passed to the thread for processing a request
 };
-
+struct HTTP_buffer
+{
+  char *request;
+  char *response;
+  char *buffer;
+  int buffersize;
+  int offset;
+};
 
 
 #endif 
