@@ -6,7 +6,7 @@
 
 extern int errno;
 
-int HTTP_Request(HTTP_buffer *HTTP)
+int HTTP_Request(struct HTTP_buffer *HTTP)
 {
 //TODO
 //Switch case

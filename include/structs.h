@@ -20,11 +20,11 @@ struct thread_data
 };
 struct HTTP_buffer
 {
-  char *request;
-  char *response;
-  char *buffer;
-  int buffersize;
-  int offset;
+  char *request;///< HTTP-request from the client
+  char *response;///< HTTP-response from the server in it's entirety
+  char *buffer;///< the response is split and buffered to the socket
+  int buffersize;///< size of the buffer
+  int offset;///< offset to keep track of what have been buffered
 };
 
 
