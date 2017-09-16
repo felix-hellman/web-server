@@ -44,11 +44,12 @@ int main(int argc, char ** argv)
 	}
 
 	handleArguments(&settings,&defaultsettings,argc,argv);
+	cleanconfigsettings(&defaultsettings);
 	if(settings.daemonMode == 1)
 	{
 		int pid = fork();
 		close(STDOUT_FILENO);
-	  close(STDERR_FILENO);
+		close(STDERR_FILENO);
 		if(pid != 0)
 			exit(0);
 	}

@@ -20,20 +20,16 @@ int invalidArgument(char * argument)
 
 void handleArguments(struct settingsdata * settings,struct configsettings * defaultsettings, int argc, char ** argv)
 {
-	if(defaultsettings->port != 0)
+	settings->filepath = NULL;
+	settings->daemonMode = 0;
+	settings->requestHandlingMode = 'T';
+	settings->listeningport = 8080;
+	if(defaultsettings->port != 0) //Other default was read from config file
 	{
-		settings->filepath = NULL;
 		settings->listeningport = defaultsettings->port;
-		settings->daemonMode = 0;
 		settings->requestHandlingMode = defaultsettings->requesthandling[0];
 	}
-	else
-	{
-		settings->filepath = NULL;
-		settings->listeningport = 8080;
-		settings->daemonMode = 0;
-		settings->requestHandlingMode = 'T';
-	}
+
 	for(int i = 0; i < argc; i++)
 	{
 		if(strcmp(argv[i],"-p") == 0)
