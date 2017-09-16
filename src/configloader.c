@@ -50,7 +50,7 @@ int validoption(char * input) //returns index for switch case
 
 void loadconfiguration(struct configsettings * conf)
 {
-	FILE *fp = fopen("config.txt","r");
+	FILE *fp = fopen(".lab3-config","r");
 
 	conf->port = 0;
 	conf->rootdirectory = NULL;
@@ -60,19 +60,22 @@ void loadconfiguration(struct configsettings * conf)
 	int index = 0, result = -1;
 
 	memset(linebuffer,0,100);
-	while((c = fgetc(fp)) != EOF)
+	if(fp)
 	{
-		if(c != '\n' && c != '=')
-			linebuffer[index++] = c;
-		else
+		while((c = fgetc(fp)) != EOF)
 		{
-			if(c == '=')
-				result = validoption(linebuffer);
-			else if(c == '\n')
-				insertoption(linebuffer,conf,result);
-			memset(linebuffer,0,100);
-			index = 0;
+			if(c != '\n' && c != '=')
+				linebuffer[index++] = c;
+			else
+			{
+				if(c == '=')
+					result = validoption(linebuffer);
+				else if(c == '\n')
+					insertoption(linebuffer,conf,result);
+				memset(linebuffer,0,100);
+				index = 0;
+			}
 		}
+		fclose(fp);
 	}
-	fclose(fp);
 }

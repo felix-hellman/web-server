@@ -6,3 +6,4 @@
 !*.c
 !*.h
 !.gitignore
+!.lab3-config
