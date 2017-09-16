@@ -11,10 +11,15 @@
 #define WWW "/var/www"
 
 int HTTP_Request(struct HTTP_buffer *HTTP);
-int GET(char *request, char *buffer, int buffersize, int offset);
-int HEAD(char *request, char *buffer, int buffersize, int offset);
+int GET(struct HTTP_buffer *HTTP);
+int HEAD(struct HTTP_buffer *HTTP);
+int NOT_IMPL(struct HTTP_buffer *HTTP);
+int BAD_REQ(struct HTTP_buffer *HTTP);
+int sendBuffer(struct HTTP_buffer *HTTP);
 int readFile(char *filepath, char *content);
 int extractFilename(char *request, char *filepath);
-void createHeader(char *header, int length);
+void createHeader(char *header, int length, int code);
+int cmpNotImpl(char *method);
+int illegalURLchar(char ch);
 
 #endif

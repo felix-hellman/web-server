@@ -8,41 +8,70 @@ extern int errno;
 
 int HTTP_Request(struct HTTP_buffer *HTTP)
 {
-//TODO
-//Switch case
-//  GET
-//  HEAD
-//  POST/PUT/etc: not implemented
-//  default: bad request
-//return 0(done) or 1(continue)
-	return GET(HTTP->request, HTTP->buffer, HTTP->buffersize, HTTP->offset);
+	HTTP->response = calloc((HEADER_SIZE + FILE_SIZE), sizeof(char));
+	char method[8]; //The longest methods are 7 characthers() eg. CONNECT, OPTIONS
+	int i = 0;
+	while (HTTP->request[i] != ' ' && i < 7 && i < strlen(HTTP->request)) {
+		method[i] = HTTP->request[i];
+		i++;
+	}
+	method[i] = '\0';
+
+	if (strcmp(method, "GET") == 0)
+		return GET(HTTP);
+	else if (strcmp(method, "HEAD") == 0)
+		return HEAD(HTTP);
+	else if (cmpNotImpl(method))
+		return NOT_IMPL(HTTP);
+	else
+		return BAD_REQ(HTTP);
 }
 
-//TODO handle those statuscodes
-int GET(char *request, char *buffer, int buffersize, int offset)
+int GET(struct HTTP_buffer *HTTP)
 {
 	char filepath[PATH_SIZE];
-	extractFilename(request, filepath);
+	int statusCode;
+	statusCode = extractFilename(HTTP->request, filepath);
 
-	char content[FILE_SIZE];
-	readFile(filepath, content);
+	char content[FILE_SIZE] = "";
+	if (statusCode == 200)
+		statusCode = readFile(filepath, content);
 
-	char response[HEADER_SIZE + FILE_SIZE];
 	int length = strlen(content);
-	createHeader(response, length);
-	strcat(response, content);
-	memcpy(buffer, &response[buffersize * offset], buffersize);
+	createHeader(HTTP->response, length, statusCode);
+	strcat(HTTP->response, content);
 
-	if (strlen(response) < (offset+1)*buffersize)
-		return 0;
-	else
-		return 1;
+	return sendBuffer(HTTP);
 }
 
-int HEAD(char *request, char *buffer, int buffersize, int offset)
+
+int HEAD(struct HTTP_buffer *HTTP)
 {
-	createHeader(buffer, 0);
-	return 0;
+	createHeader(HTTP->response, 0, 200);
+	return sendBuffer(HTTP);
+}
+
+int NOT_IMPL(struct HTTP_buffer *HTTP)
+{
+	createHeader(HTTP->response, 0, 501);
+	return sendBuffer(HTTP);
+}
+
+int BAD_REQ(struct HTTP_buffer *HTTP)
+{
+	createHeader(HTTP->response, 0, 400);
+	return sendBuffer(HTTP);
+}
+
+int sendBuffer(struct HTTP_buffer *HTTP)
+{
+	memcpy(HTTP->buffer, &HTTP->response[HTTP->buffersize * HTTP->offset], HTTP->buffersize);
+	if (strlen(HTTP->response) > (HTTP->offset+2)*HTTP->buffersize) {
+		return 1;
+	} else {
+		free(HTTP->response);
+		return 0;
+	}
 }
 
 int readFile(char *filepath, char *content)
@@ -74,27 +103,84 @@ int extractFilename(char *request, char *filepath)
 
 	int i = 4; //Works for GET but not POST
 	int j = 0;
-	while (request[i] != ' ' && request[i] != '\n' && request[i] != '\r' && request[i] != '\\' && j < namelen - 1) //TODO Bryt ut till funktion validURLchar(request[i])
+	while (request[i] != ' ' && !illegalURLchar(request[i]) && j < namelen - 12) //-12 to make room for possible index.html
 		filename[j++] = request[i++];
 	filename[j] = '\0';
 
 	if (filename[strlen(filename)-1] == '/')
-		strcat(filename, "index.html"); //possible overflow
+		strcat(filename, "index.html");
 	strcpy(filepath, WWW);
 	strcat(filepath, filename);
 	free(filename);
 
-	if (request[i] == '\\' || request[i] == '\n' || request[i] == '\r')
+	char resolved[PATH_SIZE];
+	char *res = realpath(filepath, resolved);
+	if (res == NULL)
+	{
+		return 500;
+	}
+	strcpy(filepath, resolved);
+
+	i = 0;
+	while (i < strlen(WWW) && i < strlen(filepath)) {
+		if (WWW[i] != filepath[i])
+			return 403;
+		i++;
+	}
+
+	if (illegalURLchar(request[i]))
 		return 501;
 	return 200;
 }
 
-//TODO correct date, error code
-void createHeader(char *header, int length)
+//TODO correct date
+void createHeader(char *header, int length, int code)
 {
-	strcpy(header, "HTTP/1.0 200 OK\nDate: Tue, 12 Sep 2017 19:49:32 GMT\nServer: AdamFelix\nContent-Length: ");
+	strcpy(header, "HTTP/1.0 ");
+	char statusCode[30];
+	switch (code) {
+	case 200:
+		strcpy(statusCode, "200 OK \n");
+		break;
+	case 400:
+		strcpy(statusCode, "400 Bad Request \n");
+		break;
+	case 403:
+		strcpy(statusCode, "403 Forbidden \n");
+		break;
+	case 404:
+		strcpy(statusCode, "404 Not Found \n");
+		break;
+	case 501:
+		strcpy(statusCode, "501 Not Implemented \n");
+		break;
+	case 500:
+	default:
+		strcpy(statusCode, "500 Internal Server Error \n");
+		break;
+	}
+	strcat(header, statusCode);
+	strcat(header, "Date: Tue, 12 Sep 2017 19:49:32 GMT\nServer: AdamFelix\nContent-Length: ");
 	char lengthstr[12];
 	sprintf(lengthstr, "%d", length);
 	strcat(header, lengthstr);
 	strcat(header, "\nContent-Type: text/html\n\n");
+}
+
+int cmpNotImpl(char *method)
+{
+	return (
+	strcmp(method, "POST") == 0 ||
+	strcmp(method, "PUT") == 0 ||
+	strcmp(method, "DELETE") == 0 ||
+	strcmp(method, "TRACE") == 0 ||
+	strcmp(method, "OPTIONS") == 0 ||
+	strcmp(method, "CONNECT") == 0 ||
+	strcmp(method, "PATCH") == 0
+	);
+}
+
+int illegalURLchar(char ch)
+{
+	return (ch == '\\' || ch == '\n' || ch == '\r');
 }
