@@ -101,7 +101,7 @@ void handleConnection(struct thread_data * data)
 	httpbuff.buffersize = buffersize;
 	httpbuff.response = NULL;
 	httpbuff.offset = 0;
-	httpbuff.request = client_message;
+	httpbuff.client_message = client_message;
 
 
 	int read_size;

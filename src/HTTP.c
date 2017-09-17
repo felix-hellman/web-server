@@ -1,65 +1,220 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <errno.h>
+#include "structs.h"
 #include "HTTP.h"
 
 extern int errno;
 
 int HTTP_Request(struct HTTP_buffer *HTTP)
 {
-	HTTP->response = calloc((HEADER_SIZE + FILE_SIZE), sizeof(char));
-	char method[8]; //The longest methods are 7 characthers() eg. CONNECT, OPTIONS
-	int i = 0;
-	while (HTTP->request[i] != ' ' && i < 7 && i < strlen(HTTP->request)) {
-		method[i] = HTTP->request[i];
-		i++;
+	if (HTTP->response == NULL) {
+		HTTP->response = calloc((HEADER_SIZE + FILE_SIZE + 1), sizeof(char));
+		return parseRequest(HTTP);
+	} else {
+		return sendBuffer(HTTP);
 	}
-	method[i] = '\0';
-
-	if (strcmp(method, "GET") == 0)
-		return GET(HTTP);
-	else if (strcmp(method, "HEAD") == 0)
-		return HEAD(HTTP);
-	else if (cmpNotImpl(method))
-		return NOT_IMPL(HTTP);
-	else
-		return BAD_REQ(HTTP);
 }
 
-int GET(struct HTTP_buffer *HTTP)
+int parseRequest(struct HTTP_buffer *HTTP)
 {
-	char filepath[PATH_SIZE];
-	int statusCode;
-	statusCode = extractFilename(HTTP->request, filepath);
+	struct HTTP_request request;
+	parseMethod(HTTP->client_message, &request);
+	if (request.method == 1 || request.method == 2)
+		parsePath(HTTP->client_message, &request);
+	if (request.method == 1 || request.method == 2)
+		parseVersion(HTTP->client_message, &request);
 
+	switch (request.method) {
+	case 1:
+		return GET(HTTP, &request);
+	case 2:
+		return HEAD(HTTP, &request);
+	case -1:
+		return NOT_IMPL(HTTP);
+	case -2:
+		return BAD_REQ(HTTP);
+	case -3:
+		return FORBIDDEN(HTTP);
+	case 0:
+	default:
+		return SERV_ERR(HTTP);
+	}
+}
+
+void parseMethod(const char *client_message, struct HTTP_request *request)
+{
+	char tmp[8]; //The longest methods are 7 characthers() eg. CONNECT, OPTIONS
+	int i = 0;
+	while (client_message[i] != ' ' && i < 7 && i < strlen(client_message)) {
+		tmp[i] = client_message[i];
+		i++;
+	}
+	tmp[i] = '\0';
+	
+	if (strcmp(tmp, "GET") == 0)
+		request->method = 1;
+	else if (strcmp(tmp, "HEAD") == 0)
+		request->method = 1;
+	else if (cmpNotImpl(tmp))
+		request->method = -1;
+	else
+		request->method = -2;
+}
+
+void parsePath(const char *client_message, struct HTTP_request *request)
+{
+	//Step past HEAD, GET and spaces to get to the requestedpath
+	int stepper;
+	if (request->method == 1)
+		stepper = 3;
+	else 
+		stepper = 4;
+	while (stepper < strlen(client_message) && client_message[stepper] == ' ')
+		stepper++;
+
+	char tmp[PATH_MAX];
+	strcpy(tmp, WWW);
+	int i = strlen(WWW);
+	int j = 0;
+	while (client_message[stepper] != ' ' &&
+	client_message[stepper] != '\r' &&
+	client_message[stepper] != '\n' &&
+	client_message[stepper] != '\0' &&
+	client_message[stepper] != '\\' &&
+	stepper < strlen(client_message) &&
+	i < (PATH_MAX - 1 - strlen("index.html") - strlen(WWW))) { //making room for WWW and possible index.html
+		tmp[i++] = client_message[stepper];
+		request->raw_path[j++] = client_message[stepper];
+		stepper++;
+	}
+	tmp[i] = '\0';
+
+	if (tmp[i-1] == '/')
+		strcat(tmp, "index.html");
+
+	char *res = realpath(tmp, request->path);
+	if (res == NULL)
+		request->method = 0;
+
+	i = 0;
+	while (i < strlen(WWW)) {
+		if (i >= strlen(tmp) && WWW[i] != tmp[i])
+			request->method = -3;
+		i++;
+	}
+}
+
+void parseVersion(const char *client_message, struct HTTP_request *request)
+{
+	//Step past HEAD, GET, path and spaces to get to the requestedpath
+	int stepper;
+	if (request->method == 1)
+		stepper = 3;
+	else 
+		stepper = 4;
+	while (stepper < strlen(client_message) && client_message[stepper] == ' ')
+		stepper++;
+	stepper += strlen(request->raw_path);
+	while (stepper < strlen(client_message) && client_message[stepper] == ' ')
+		stepper++;
+
+	if (client_message[stepper] == '\r' ||
+	client_message[stepper] == '\n' ||
+	client_message[stepper] == '\0' ||
+	client_message[stepper] == '\\') {
+		request->version = 9;
+	} else {
+		if (stepper + 7 >= strlen(client_message) ||
+		client_message[stepper] != 'H' || 
+		client_message[stepper+1] != 'T' ||
+		client_message[stepper+2] != 'T' ||
+		client_message[stepper+3] != 'P' ||
+		client_message[stepper+4] != '/' ||
+		client_message[stepper+6] != '.')
+			request->method=-2;
+		else if(client_message[stepper+5] != '0' ||
+		client_message[stepper+7] != '9')
+			request->version=9;
+		else if(client_message[stepper+5] != '1' ||
+		client_message[stepper+7] != '0')
+			request->version=10;
+		else if(client_message[stepper+5] != '1' ||
+		client_message[stepper+7] != '1')
+			request->version=11;
+		else
+			request->method=0;
+	}
+}
+
+int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request)
+{
 	char content[FILE_SIZE] = "";
-	if (statusCode == 200)
-		statusCode = readFile(filepath, content);
+	readFile(content, request);
+	if (request->method == 0)
+		return SERV_ERR(HTTP);
+	else if (request->method == -4)
+		return NOT_FOUND(HTTP);
 
 	int length = strlen(content);
-	createHeader(HTTP->response, length, statusCode);
+	char header[HEADER_SIZE];
+	strcpy(HTTP->response, "");
+	if (request->version != 9) {
+		createHeader(header, length);
+		strcat(HTTP->response, header);
+	}
 	strcat(HTTP->response, content);
 
 	return sendBuffer(HTTP);
 }
 
 
-int HEAD(struct HTTP_buffer *HTTP)
+int HEAD(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	createHeader(HTTP->response, 0, 200);
+	char content[FILE_SIZE] = "";
+	readFile(content, request);
+	if (request->method == 0)
+		return SERV_ERR(HTTP);
+	else if (request->method == -4)
+		return NOT_FOUND(HTTP);
+
+	int length = strlen(content);
+	char header[HEADER_SIZE];
+	createHeader(header, length);
+	strcpy(HTTP->response, header);
+
 	return sendBuffer(HTTP);
 }
 
 int NOT_IMPL(struct HTTP_buffer *HTTP)
 {
-	createHeader(HTTP->response, 0, 501);
+	strcpy(HTTP->response, "501 Not Implemented\n");
 	return sendBuffer(HTTP);
 }
 
 int BAD_REQ(struct HTTP_buffer *HTTP)
 {
-	createHeader(HTTP->response, 0, 400);
+	strcpy(HTTP->response, "400 Bad Request\n");
+	return sendBuffer(HTTP);
+}
+
+int FORBIDDEN(struct HTTP_buffer *HTTP)
+{
+	strcpy(HTTP->response, "403 Forbidden\n");
+	return sendBuffer(HTTP);
+}
+
+int NOT_FOUND(struct HTTP_buffer *HTTP)
+{
+	strcpy(HTTP->response, "404 Not Found\n");
+	return sendBuffer(HTTP);
+}
+
+int SERV_ERR(struct HTTP_buffer *HTTP)
+{
+	strcpy(HTTP->response, "500 Internal Server Error\n");
 	return sendBuffer(HTTP);
 }
 
@@ -70,20 +225,21 @@ int sendBuffer(struct HTTP_buffer *HTTP)
 		return 1;
 	} else {
 		free(HTTP->response);
+		HTTP->response = NULL;
 		return 0;
 	}
 }
 
-int readFile(char *filepath, char *content)
+void readFile(char *content, struct HTTP_request *request)
 {
-	FILE *file = fopen(filepath, "r");
+	FILE *file = fopen(request->path, "r");
 
 	if (file == NULL) {
 		int errnum = errno;
-		if (strcmp(strerror(errnum), "No such file or directory") == 0)
-			return 404;
+		if (strcmp(strerror(errnum), "No such file or directory") == 0) //TODO Forbidden if no permission
+			request->method = -4;
 		else
-			return 500;
+			request->method = 0;
 	}  else {
 		char ch;
 		int i = 0;
@@ -91,75 +247,13 @@ int readFile(char *filepath, char *content)
 			content[i++] = ch;
 		content[i] = '\0';
 		fclose(file);
-		return 200;
 	}
 }
 
-//TODO kolla om adressen ligger på tillåten plats. Annars blir det 403! realpath
-int extractFilename(char *request, char *filepath)
+//TODO correct date, identify data type
+void createHeader(char *header, int length)
 {
-	int namelen = PATH_SIZE - strlen(WWW);
-	char *filename = calloc(namelen, sizeof(char));
-
-	int i = 4; //Works for GET but not POST
-	int j = 0;
-	while (request[i] != ' ' && !illegalURLchar(request[i]) && j < namelen - 12) //-12 to make room for possible index.html
-		filename[j++] = request[i++];
-	filename[j] = '\0';
-
-	if (filename[strlen(filename)-1] == '/')
-		strcat(filename, "index.html");
-	strcpy(filepath, WWW);
-	strcat(filepath, filename);
-	free(filename);
-
-	char resolved[PATH_SIZE];
-	char *res = realpath(filepath, resolved);
-	if (res == NULL)
-	{
-		return 500;
-	}
-	strcpy(filepath, resolved);
-
-	i = 0;
-	while (i < strlen(WWW) && i < strlen(filepath)) {
-		if (WWW[i] != filepath[i])
-			return 403;
-		i++;
-	}
-
-	if (illegalURLchar(request[i]))
-		return 501;
-	return 200;
-}
-
-//TODO correct date
-void createHeader(char *header, int length, int code)
-{
-	strcpy(header, "HTTP/1.0 ");
-	char statusCode[30];
-	switch (code) {
-	case 200:
-		strcpy(statusCode, "200 OK \n");
-		break;
-	case 400:
-		strcpy(statusCode, "400 Bad Request \n");
-		break;
-	case 403:
-		strcpy(statusCode, "403 Forbidden \n");
-		break;
-	case 404:
-		strcpy(statusCode, "404 Not Found \n");
-		break;
-	case 501:
-		strcpy(statusCode, "501 Not Implemented \n");
-		break;
-	case 500:
-	default:
-		strcpy(statusCode, "500 Internal Server Error \n");
-		break;
-	}
-	strcat(header, statusCode);
+	strcpy(header, "HTTP/1.0 200 OK\n");
 	strcat(header, "Date: Tue, 12 Sep 2017 19:49:32 GMT\nServer: AdamFelix\nContent-Length: ");
 	char lengthstr[12];
 	sprintf(lengthstr, "%d", length);
@@ -178,9 +272,4 @@ int cmpNotImpl(char *method)
 	strcmp(method, "CONNECT") == 0 ||
 	strcmp(method, "PATCH") == 0
 	);
-}
-
-int illegalURLchar(char ch)
-{
-	return (ch == '\\' || ch == '\n' || ch == '\r');
 }
