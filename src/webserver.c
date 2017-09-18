@@ -57,8 +57,15 @@ int main(int argc, char ** argv)
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
 
-	for(int i = 0; i < 4; i++)
-		t_data->working = 0;
+	for(int i = 0; i < THREADPOOL_MAX; i++)
+	{
+		t_data[i].working = 0;
+		t_data[i].thread_id = i;
+		t_data[i].clientsocket = 0;
+		init_thread(&threads[i],&t_data[i]);
+	}
+
+
 
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
@@ -67,7 +74,7 @@ int main(int argc, char ** argv)
 	socket_desc_ptr = &socket_desc;
 	if(socket_desc == -1)
 	{
-		printf("Could not create socket");
+		printf("Could not create socket\n");
 	}
 
 	server.sin_family = AF_INET;
@@ -85,22 +92,22 @@ int main(int argc, char ** argv)
 	while(1)
 	{
 		printf("%s\n","Listening");
-		listen(socket_desc, 1000);
+		listen(socket_desc, 50);
 		c = sizeof(struct sockaddr_in);
-
 		client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
+		printf("%s\n","Incoming connection");
 		if(client_sock < 0)
 		{
 			perror("Accept failed");
 			return 1;
 		}
-		printf("Spawning thread for index %d\n", threadIndex);
 		while(t_data[threadIndex].working)
 		{
 			threadIndex = (threadIndex+1)%THREADPOOL_MAX;
 		}
 		t_data[threadIndex].clientsocket = client_sock;
-		spawn_connection(&threads[threadIndex],&t_data[threadIndex]);
+		client_sock = -1;
+		//spawn_connection(&threads[threadIndex], &t_data[threadIndex]);
 	}
 
 	/*Some cleanup stuff*/

@@ -91,50 +91,60 @@ void handleArguments(struct settingsdata * settings,struct configsettings * defa
 
 void handleConnection(struct thread_data * data)
 {
-	data->working = 1;
-	const int buffersize = 1024;
-	char * client_message = calloc(sizeof(char),buffersize);
-	char * message = calloc(sizeof(char),buffersize);
-
-	struct HTTP_buffer httpbuff;
-	httpbuff.buffer = message;
-	httpbuff.buffersize = buffersize;
-	httpbuff.response = NULL;
-	httpbuff.offset = 0;
-	httpbuff.client_message = client_message;
-
-
-	int read_size;
-	while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
+	while(1)
 	{
-		int offset = 0;
-		int returncode = 1;
-		do
+		while(data->clientsocket == 0)
 		{
-			memset(message,0,buffersize);
-			returncode = HTTP_Request(&httpbuff);
-			offset++;
-			write(data->clientsocket,message,strlen(message));
-		} while(returncode);
+			sleep(1);
+		}
+		printf("Thread %d processing the request\n", data->thread_id);
+		data->working = 1;
+		const int buffersize = 1024;
+		char * client_message = calloc(sizeof(char),buffersize);
+		char * message = calloc(sizeof(char),buffersize);
+
+		struct HTTP_buffer httpbuff;
+		httpbuff.buffer = message;
+		httpbuff.buffersize = buffersize;
+		httpbuff.response = NULL;
+		httpbuff.offset = 0;
+		httpbuff.client_message = client_message;
+
+
+		int read_size;
+		while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
+		{
+			int offset = 0;
+			int returncode = 1;
+			do
+			{
+				memset(message,0,buffersize);
+				returncode = HTTP_Request(&httpbuff);
+				offset++;
+				write(data->clientsocket,message,strlen(message));
+				printf("Thread nr %d has the returncode %d\n", data->thread_id,returncode);
+			} while(returncode != 0);
+		}
+		if(httpbuff.response)
+			free(httpbuff.response);
+		free(message);
+		free(client_message);
+		//shutdown(data->clientsocket,SHUT_RDWR);
+		//close(data->clientsocket);
+		data->clientsocket = 0;
+		data->working = 0;
+		printf("Thread %d is done processing the request\n", data->thread_id);
 	}
-	if(httpbuff.response)
-		free(httpbuff.response);
-	free(message);
-	free(client_message);
-	shutdown(data->clientsocket,SHUT_RDWR);
-	close(data->clientsocket);
-	data->working = 0;
-	data->clientsocket = 0;
 }
 
-void spawn_connection(pthread_t * thread,struct thread_data * data)
+void init_thread(pthread_t * thread,struct thread_data * data)
 {
 	int errorcode = pthread_create(thread,NULL,(void *)handleConnection,(void *) data);
 	if(errorcode)
 	{
-		printf("Error from pthread_create");
+		printf("Error from pthread_create\n");
 	}
-	printf("Done with spawn %d\n", data->clientsocket);
+	printf("Done with spawn %d\n", data->thread_id);
 }
 
 

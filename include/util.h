@@ -26,7 +26,7 @@ void handleConnection(struct thread_data * data);
 /**
  * @brief Calls the handleConnection in a separate thread
  */
-void spawn_connection(pthread_t * thread, struct thread_data * data);
+void init_thread(pthread_t * thread, struct thread_data * data);
 /**
  * @brief Prints the help text on how to use the program
  */

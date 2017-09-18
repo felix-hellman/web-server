@@ -23,6 +23,7 @@ struct thread_data
 {
  int working; ///< is 1 if working and 0 if done with handling a request
  int clientsocket; ///< client socket passed to the thread for processing a request
+ int thread_id;
 };
 struct HTTP_buffer
 {
@@ -35,7 +36,7 @@ struct HTTP_buffer
 struct HTTP_request
 {
 	int method;///< 1=GET 2=HEAD -1=not implemented -2=bad request -3=forbidden -4=not found 0=internal server error
-	char path[PATH_MAX];///< the requested resolved URL. 
+	char path[PATH_MAX];///< the requested resolved URL.
 	char raw_path[PATH_MAX];///< the requested URL
 	int version;///< HTTP version number 9, 10 or 11 for HTTP/[0.9|1.0|1.1]
 };
