@@ -121,7 +121,7 @@ void handleConnection(struct thread_data * data)
 		free(httpbuff.response);
 	free(message);
 	free(client_message);
-	shutdown(data->clientsocket,SHUT_WR);
+	shutdown(data->clientsocket,SHUT_RDWR);
 	close(data->clientsocket);
 	data->working = 0;
 	data->clientsocket = 0;
