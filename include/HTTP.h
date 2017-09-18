@@ -24,6 +24,7 @@ int NOT_FOUND(struct HTTP_buffer *HTTP);
 int sendBuffer(struct HTTP_buffer *HTTP);
 void readFile(char *content, struct HTTP_request *request);
 void createHeader(char *header, int length);
+void datetime(char *datestring);
 int cmpNotImpl(char *method);
 
 #endif

@@ -1,11 +1,12 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 #include <errno.h>
 #include "structs.h"
 #include "HTTP.h"
-
 extern int errno;
 
 int HTTP_Request(struct HTTP_buffer *HTTP)
@@ -162,7 +163,7 @@ void parseVersion(const char *client_message, struct HTTP_request *request)
 
 int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	char content[FILE_SIZE] = "";
+	char content[FILE_SIZE] = "\n";
 	readFile(content, request);
 	if (request->method == 0)
 		return SERV_ERR(HTTP);
@@ -184,7 +185,7 @@ int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 
 int HEAD(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	char content[FILE_SIZE] = "";
+	char content[FILE_SIZE] = "\n";
 	readFile(content, request);
 	if (request->method == 0)
 		return SERV_ERR(HTTP);
@@ -264,12 +265,39 @@ void readFile(char *content, struct HTTP_request *request)
 //TODO correct date, identify data type
 void createHeader(char *header, int length)
 {
-	strcpy(header, "HTTP/1.0 200 OK\n");
-	strcat(header, "Date: Tue, 12 Sep 2017 19:49:32 GMT\nServer: AdamFelix\nContent-Length: ");
+	strcpy(header, "HTTP/1.0 200 OK\nDate: ");
+	char datestring[37];
+	datetime(datestring); //Needs to be 36 + 1 ( LEN + 1 for \0 )
+	strcat(header, datestring);
+	strcat(header, "\nServer: AdamFelix\nContent-Length: ");
 	char lengthstr[12];
 	sprintf(lengthstr, "%d", length);
 	strcat(header, lengthstr);
-	strcat(header, "\nContent-Type: text/html\n\n");
+	strcat(header, "\nContent-Type: text/html\n");
+}
+
+void datetime(char *datestring)
+{
+	time_t rawtime;
+	struct tm * timeinfo;
+
+	char weekday[4], month[4];
+	memset(weekday,0,4);
+	memset(month,0,4);
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	timeinfo->tm_hour = timeinfo->tm_hour - timeinfo->tm_gmtoff/60/60; //Timezone correction to GMT
+
+	char * days[] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
+	char * months[] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+
+	memcpy(weekday,days[timeinfo->tm_wday],4);
+	memcpy(month,months[timeinfo->tm_mon],4);
+
+	sprintf(datestring,"Date : %s, %d %s %d %d:%d:%d GMT"
+		,weekday,timeinfo->tm_mday,month,timeinfo->tm_year+1900, 
+		timeinfo->tm_hour,timeinfo->tm_min,timeinfo->tm_sec); //Put correctly formated string into datestring variable
 }
 
 int cmpNotImpl(char *method)
