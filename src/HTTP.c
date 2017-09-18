@@ -27,7 +27,6 @@ int parseRequest(struct HTTP_buffer *HTTP)
 		parsePath(HTTP->client_message, &request);
 	if (request.method == 1 || request.method == 2)
 		parseVersion(HTTP->client_message, &request);
-
 	switch (request.method) {
 	case 1:
 		return GET(HTTP, &request);
@@ -56,7 +55,7 @@ void parseMethod(const char *client_message, struct HTTP_request *request)
 		i++;
 	}
 	tmp[i] = '\0';
-	
+
 	if (strcmp(tmp, "GET") == 0)
 		request->method = 1;
 	else if (strcmp(tmp, "HEAD") == 0)
@@ -73,7 +72,7 @@ void parsePath(const char *client_message, struct HTTP_request *request)
 	int stepper;
 	if (request->method == 1)
 		stepper = 3;
-	else 
+	else
 		stepper = 4;
 	while (stepper < strlen(client_message) && client_message[stepper] == ' ')
 		stepper++;
@@ -82,8 +81,8 @@ void parsePath(const char *client_message, struct HTTP_request *request)
 	strcpy(tmp, WWW);
 	int i = strlen(WWW);
 	if (client_message[stepper] != '/')
-		tmp[i++] = '/';	
-	int j = 0;	
+		tmp[i++] = '/';
+	int j = 0;
 	while (client_message[stepper] != ' ' &&
 	client_message[stepper] != '\r' &&
 	client_message[stepper] != '\n' &&
@@ -96,17 +95,17 @@ void parsePath(const char *client_message, struct HTTP_request *request)
 		stepper++;
 	}
 	tmp[i] = '\0';
-	
+
 	if (tmp[i-1] == '/')
 		strcat(tmp, "index.html");
 
-	//Resolve relative paths	
+	//Resolve relative paths
 	char *res = realpath(tmp, request->path);
 	if (res == NULL) {
 		int errnum = errno;
 		if (strcmp(strerror(errnum), "No such file or directory") == 0)
 			request->method = -4;
-		else	
+		else
 			request->method = 0;
 	}
 
@@ -125,7 +124,7 @@ void parseVersion(const char *client_message, struct HTTP_request *request)
 	int stepper;
 	if (request->method == 1)
 		stepper = 3;
-	else 
+	else
 		stepper = 4;
 	while (stepper < strlen(client_message) && client_message[stepper] == ' ')
 		stepper++;
@@ -140,7 +139,7 @@ void parseVersion(const char *client_message, struct HTTP_request *request)
 		request->version = 9;
 	} else {
 		if (stepper + 7 >= strlen(client_message) ||
-		client_message[stepper] != 'H' || 
+		client_message[stepper] != 'H' ||
 		client_message[stepper+1] != 'T' ||
 		client_message[stepper+2] != 'T' ||
 		client_message[stepper+3] != 'P' ||
@@ -163,7 +162,7 @@ void parseVersion(const char *client_message, struct HTTP_request *request)
 
 int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	char content[FILE_SIZE] = "\n";
+	char content[FILE_SIZE] = "";
 	readFile(content, request);
 	if (request->method == 0)
 		return SERV_ERR(HTTP);
@@ -185,7 +184,7 @@ int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 
 int HEAD(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	char content[FILE_SIZE] = "\n";
+	char content[FILE_SIZE] = "";
 	readFile(content, request);
 	if (request->method == 0)
 		return SERV_ERR(HTTP);
@@ -262,7 +261,6 @@ void readFile(char *content, struct HTTP_request *request)
 	}
 }
 
-//TODO correct date, identify data type
 void createHeader(char *header, int length)
 {
 	strcpy(header, "HTTP/1.0 200 OK\nDate: ");
@@ -273,7 +271,7 @@ void createHeader(char *header, int length)
 	char lengthstr[12];
 	sprintf(lengthstr, "%d", length);
 	strcat(header, lengthstr);
-	strcat(header, "\nContent-Type: text/html\n");
+	strcat(header, "\nContent-Type: text/html\n\n");
 }
 
 void datetime(char *datestring)
@@ -296,7 +294,7 @@ void datetime(char *datestring)
 	memcpy(month,months[timeinfo->tm_mon],4);
 
 	sprintf(datestring,"Date : %s, %d %s %d %d:%d:%d GMT"
-		,weekday,timeinfo->tm_mday,month,timeinfo->tm_year+1900, 
+		,weekday,timeinfo->tm_mday,month,timeinfo->tm_year+1900,
 		timeinfo->tm_hour,timeinfo->tm_min,timeinfo->tm_sec); //Put correctly formated string into datestring variable
 }
 
