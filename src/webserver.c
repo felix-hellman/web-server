@@ -32,7 +32,7 @@ void handle_signal(int signal)
  */
 int main(int argc, char ** argv)
 {
-	
+
 
 
 	struct configsettings defaultsettings;
@@ -105,7 +105,7 @@ int main(int argc, char ** argv)
 			perror("Accept failed");
 			return 1;
 		}
-		while(t_data[threadIndex].working)
+		while(t_data[threadIndex].clientsocket != 0)
 		{
 			threadIndex = (threadIndex+1)%THREADPOOL_MAX;
 		}
