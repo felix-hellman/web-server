@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/time.h>
 #include "HTTP.h"
 #include "util.h"
 #include "structs.h"
@@ -31,6 +32,9 @@ void handle_signal(int signal)
  */
 int main(int argc, char ** argv)
 {
+	
+
+
 	struct configsettings defaultsettings;
 	loadconfiguration(&defaultsettings);
 	struct settingsdata settings;

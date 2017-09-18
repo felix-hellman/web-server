@@ -97,6 +97,10 @@ void handleConnection(struct thread_data * data)
 		{
 			sleep(1);
 		}
+		struct timeval tv;
+		tv.tv_sec = 30;  /* 2 Secs Timeout */
+		tv.tv_usec = 0;  // Not init'ing this can cause strange errors
+		setsockopt(data->clientsocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
 		printf("Thread %d processing the request\n", data->thread_id);
 		data->working = 1;
 		const int buffersize = 1024;
@@ -114,12 +118,15 @@ void handleConnection(struct thread_data * data)
 		int read_size;
 		while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
 		{
+			printf("Something to read\n");
 			int offset = 0;
 			int returncode = 1;
 			do
 			{
 				memset(message,0,buffersize);
+				printf("Start before returncode\n");
 				returncode = HTTP_Request(&httpbuff);
+				printf("End before returncode \n");
 				offset++;
 				write(data->clientsocket,message,strlen(message));
 				printf("Thread nr %d has the returncode %d\n", data->thread_id,returncode);
@@ -129,8 +136,8 @@ void handleConnection(struct thread_data * data)
 			free(httpbuff.response);
 		free(message);
 		free(client_message);
-		//shutdown(data->clientsocket,SHUT_RDWR);
-		//close(data->clientsocket);
+		shutdown(data->clientsocket,SHUT_RDWR);
+		close(data->clientsocket);
 		data->clientsocket = 0;
 		data->working = 0;
 		printf("Thread %d is done processing the request\n", data->thread_id);

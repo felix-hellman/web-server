@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include "HTTP.h"
 #include "structs.h"
+#include <sys/time.h>
 
 /**
  * @file util.h
