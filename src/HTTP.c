@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <time.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include "structs.h"
 #include "HTTP.h"
 extern int errno;
@@ -33,16 +34,16 @@ int parseRequest(struct HTTP_buffer *HTTP)
 	case 2:
 		return HEAD(HTTP, &request);
 	case -1:
-		return NOT_IMPL(HTTP);
+		return NOT_IMPL(HTTP, &request);
 	case -2:
-		return BAD_REQ(HTTP);
+		return BAD_REQ(HTTP, &request);
 	case -3:
-		return FORBIDDEN(HTTP);
+		return FORBIDDEN(HTTP, &request);
 	case -4:
-		return NOT_FOUND(HTTP);
+		return NOT_FOUND(HTTP, &request);
 	case 0:
 	default:
-		return SERV_ERR(HTTP);
+		return SERV_ERR(HTTP, &request);
 	}
 }
 
@@ -165,15 +166,15 @@ int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 	char content[FILE_SIZE] = "";
 	readFile(content, request);
 	if (request->method == 0)
-		return SERV_ERR(HTTP);
+		return SERV_ERR(HTTP, request);
 	else if (request->method == -3)
-		return FORBIDDEN(HTTP);
+		return FORBIDDEN(HTTP, request);
 
 	int length = strlen(content);
 	char header[HEADER_SIZE];
 	strcpy(HTTP->response, "");
 	if (request->version != 9) {
-		createHeader(header, length);
+		createHeader(header, length, request);
 		strcat(HTTP->response, header);
 	}
 	strcat(HTTP->response, content);
@@ -187,45 +188,89 @@ int HEAD(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 	char content[FILE_SIZE] = "";
 	readFile(content, request);
 	if (request->method == 0)
-		return SERV_ERR(HTTP);
+		return SERV_ERR(HTTP, request);
 	else if (request->method == -3)
-		return FORBIDDEN(HTTP);
+		return FORBIDDEN(HTTP, request);
 
 	int length = strlen(content);
 	char header[HEADER_SIZE];
-	createHeader(header, length);
+	createHeader(header, length, request);
 	strcpy(HTTP->response, header);
 
 	return sendBuffer(HTTP);
 }
 
-int NOT_IMPL(struct HTTP_buffer *HTTP)
+int NOT_IMPL(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	strcpy(HTTP->response, "501 Not Implemented\n");
+	char content[FILE_SIZE] = "501 Not Implemented\n";
+	int length = strlen(content);
+	char header[HEADER_SIZE];
+	strcpy(HTTP->response, "");
+	if (request->version != 9) {
+		createHeader(header, length, request);
+		strcat(HTTP->response, header);
+	}
+	strcat(HTTP->response, content);
 	return sendBuffer(HTTP);
 }
 
-int BAD_REQ(struct HTTP_buffer *HTTP)
+int BAD_REQ(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	strcpy(HTTP->response, "400 Bad Request\n");
+	char content[FILE_SIZE] = "400 Bad Request\n";
+	int length = strlen(content);
+	char header[HEADER_SIZE];
+	strcpy(HTTP->response, "");
+	if (request->version != 9) {
+		createHeader(header, length, request);
+		strcat(HTTP->response, header);
+	}
+	strcat(HTTP->response, content);
+	return sendBuffer(HTTP);
 	return sendBuffer(HTTP);
 }
 
-int FORBIDDEN(struct HTTP_buffer *HTTP)
+int FORBIDDEN(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	strcpy(HTTP->response, "403 Forbidden\n");
+	char content[FILE_SIZE] = "403 Forbidden\n";
+	int length = strlen(content);
+	char header[HEADER_SIZE];
+	strcpy(HTTP->response, "");
+	if (request->version != 9) {
+		createHeader(header, length, request);
+		strcat(HTTP->response, header);
+	}
+	strcat(HTTP->response, content);
+	return sendBuffer(HTTP);
 	return sendBuffer(HTTP);
 }
 
-int NOT_FOUND(struct HTTP_buffer *HTTP)
+int NOT_FOUND(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	strcpy(HTTP->response, "404 Not Found\n");
+	char content[FILE_SIZE] = "404 Not Found\n";
+	int length = strlen(content);
+	char header[HEADER_SIZE];
+	strcpy(HTTP->response, "");
+	if (request->version != 9) {
+		createHeader(header, length, request);
+		strcat(HTTP->response, header);
+	}
+	strcat(HTTP->response, content);
+	return sendBuffer(HTTP);
 	return sendBuffer(HTTP);
 }
 
-int SERV_ERR(struct HTTP_buffer *HTTP)
+int SERV_ERR(struct HTTP_buffer *HTTP, struct HTTP_request *request)
 {
-	strcpy(HTTP->response, "500 Internal Server Error\n");
+	char content[FILE_SIZE] = "500 Internal Server Error\n";
+	int length = strlen(content);
+	char header[HEADER_SIZE];
+	strcpy(HTTP->response, "");
+	if (request->version != 9) {
+		createHeader(header, length, request);
+		strcat(HTTP->response, header);
+	}
+	strcat(HTTP->response, content);
+	return sendBuffer(HTTP);
 	return sendBuffer(HTTP);
 }
 
@@ -257,45 +302,62 @@ void readFile(char *content, struct HTTP_request *request)
 		while ((ch = fgetc(file)) != EOF && i < (FILE_SIZE-1))
 			content[i++] = ch;
 		content[i] = '\0';
+
+		char datestring[37] = "";
+		struct stat mod;
+		if (!stat(request->path, &mod)) {
+			datetime(datestring, &mod.st_ctime);
+		}
+		strcpy(request->modified, datestring);
 		fclose(file);
 	}
 }
 
-void createHeader(char *header, int length)
+void createHeader(char *header, int length, struct HTTP_request *request)
 {
-	strcpy(header, "HTTP/1.0 200 OK\nDate: ");
-	char datestring[37];
-	datetime(datestring); //Needs to be 36 + 1 ( LEN + 1 for \0 )
+	strcpy(header, "HTTP/1.0 ");
+	switch (request->method) {
+	case 1:
+	case 2:
+		strcat(header, "200 OK\r\nLast-Modified: ");
+		strcat(header, request->modified);
+		strcat(header, "\r\nContent-Length: ");
+		char lengthstr[12];
+		sprintf(lengthstr, "%d\r\nDate: ", length);
+		strcat(header, lengthstr);
+		break;
+	case -1:
+		strcat(header, "501 Not Implemented\r\nDate: ");
+		break;
+	case -2:
+		strcat(header, "400 Bad Request\r\nDate: ");
+		break;
+	case -3:
+		strcat(header, "403 Forbidden\r\nDate: ");
+		break;
+	case -4:
+		strcat(header, "404 Not Found\r\nDate: ");
+		break;
+	case 0:
+	default:
+		strcat(header, "500 Internal Server Error\r\nDate: ");
+		break;
+	}
+
+	char datestring[37]; //Needs to be 36 + 1 ( LEN + 1 for \0 )
+	time_t rawtime;
+	time(&rawtime);
+	datetime(datestring, &rawtime);
 	strcat(header, datestring);
-	strcat(header, "\nServer: AdamFelix\nContent-Length: ");
-	char lengthstr[12];
-	sprintf(lengthstr, "%d", length);
-	strcat(header, lengthstr);
-	strcat(header, "\nContent-Type: text/html\n\n");
+	strcat(header, "\r\nServer: AdamFelix\r\nContent-Type: text/html\r\n\r\n");
 }
 
-void datetime(char *datestring)
+void datetime(char *datestring, const time_t *timestamp)
 {
-	time_t rawtime;
 	struct tm * timeinfo;
-
-	char weekday[4], month[4];
-	memset(weekday,0,4);
-	memset(month,0,4);
-	time(&rawtime);
-	timeinfo = localtime(&rawtime);
-
+	timeinfo = localtime(timestamp);
 	timeinfo->tm_hour = timeinfo->tm_hour - timeinfo->tm_gmtoff/60/60; //Timezone correction to GMT
-
-	char * days[] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
-	char * months[] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-
-	memcpy(weekday,days[timeinfo->tm_wday],4);
-	memcpy(month,months[timeinfo->tm_mon],4);
-
-	sprintf(datestring,"Date : %s, %d %s %d %d:%d:%d GMT"
-		,weekday,timeinfo->tm_mday,month,timeinfo->tm_year+1900,
-		timeinfo->tm_hour,timeinfo->tm_min,timeinfo->tm_sec); //Put correctly formated string into datestring variable
+	strftime(datestring, 37, "%a, %d %b %Y %H:%M:%S GMT", timeinfo);
 }
 
 int cmpNotImpl(char *method)

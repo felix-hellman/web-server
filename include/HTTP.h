@@ -16,15 +16,15 @@ void parsePath(const char *client_message, struct HTTP_request *request);
 void parseVersion(const char *client_message, struct HTTP_request *request);
 int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request);
 int HEAD(struct HTTP_buffer *HTTP, struct HTTP_request *request);
-int NOT_IMPL(struct HTTP_buffer *HTTP);
-int BAD_REQ(struct HTTP_buffer *HTTP);
-int SERV_ERR(struct HTTP_buffer *HTTP);
-int FORBIDDEN(struct HTTP_buffer *HTTP);
-int NOT_FOUND(struct HTTP_buffer *HTTP);
+int NOT_IMPL(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int BAD_REQ(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int SERV_ERR(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int FORBIDDEN(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int NOT_FOUND(struct HTTP_buffer *HTTP, struct HTTP_request *request);
 int sendBuffer(struct HTTP_buffer *HTTP);
 void readFile(char *content, struct HTTP_request *request);
-void createHeader(char *header, int length);
-void datetime(char *datestring);
+void createHeader(char *header, int length, struct HTTP_request *request);
+void datetime(char *datestring, const time_t *timestamp);
 int cmpNotImpl(char *method);
 
 #endif
