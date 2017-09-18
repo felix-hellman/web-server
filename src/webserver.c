@@ -11,7 +11,7 @@
 #include "structs.h"
 #include "configloader.h"
 
-int THREADPOOL_MAX = 4;
+int THREADPOOL_MAX = 8;
 
 int * socket_desc_ptr = NULL;
 
@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
 	while(1)
 	{
 		printf("%s\n","Listening");
-		listen(socket_desc, 3);
+		listen(socket_desc, 1000);
 		c = sizeof(struct sockaddr_in);
 
 		client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);

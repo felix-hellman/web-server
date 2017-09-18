@@ -1,6 +1,6 @@
 #include "util.h"
 
-static int THREADPOOL_MAX = 4;
+static int THREADPOOL_MAX = 8;
 
 //Return 1 if argument is invalid
 int invalidArgument(char * argument)
