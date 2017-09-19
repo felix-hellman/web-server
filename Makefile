@@ -4,7 +4,7 @@ SRC_DIR = src
 OBJ_DIR = objects
 INC_DIR = include
 
-CFLAGS = -std=c11 -Wall -I$(INC_DIR) -g -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED
+CFLAGS = -std=c11 -Wall -I$(INC_DIR) -g -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED -lbsd
 LFLAGS = -pthread
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)

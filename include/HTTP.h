@@ -7,6 +7,8 @@
 #define MB(x)   ((size_t) (x) << 20)
 #define FILE_SIZE MB(2)
 #define HEADER_SIZE KB(1)
+#define RESPONSE_SIZE FILE_SIZE + HEADER_SIZE + 1
+#define DATE_SIZE 37
 #define WWW "/var/www"
 
 /**
@@ -43,25 +45,9 @@ int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request);
  */
 int HEAD(struct HTTP_buffer *HTTP, struct HTTP_request *request);
 /**
- * @brief Creates a Not Implemented response
+ * @brief Creates an Error response
  */
-int NOT_IMPL(struct HTTP_buffer *HTTP, struct HTTP_request *request);
-/**
- * @brief Creates a Bad Request response
- */
-int BAD_REQ(struct HTTP_buffer *HTTP, struct HTTP_request *request);
-/**
- * @brief Creates an Internal Server Error response
- */
-int SERV_ERR(struct HTTP_buffer *HTTP, struct HTTP_request *request);
-/**
- * @brief Creates an Forbidden response
- */
-int FORBIDDEN(struct HTTP_buffer *HTTP, struct HTTP_request *request);
-/**
- * @brief Creates a Not Found response
- */
-int NOT_FOUND(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int ERROR(struct HTTP_buffer *HTTP, struct HTTP_request *request);
 /**
  * @brief Splits the response and place the parts in the buffer
  */
