@@ -12,9 +12,10 @@
 #include "structs.h"
 #include "configloader.h"
 
-int THREADPOOL_MAX = 8;
+int THREADPOOL_MAX = 16;
 
 int * socket_desc_ptr = NULL;
+
 
 
 /**

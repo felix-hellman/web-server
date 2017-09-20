@@ -1,6 +1,6 @@
 #include "util.h"
 
-static int THREADPOOL_MAX = 8;
+static int THREADPOOL_MAX = 16;
 
 //Return 1 if argument is invalid
 int invalidArgument(char * argument)
@@ -94,7 +94,7 @@ void handleConnection(struct thread_data * data)
 	{
 		while(data->clientsocket == 0)
 		{
-			sleep(1);
+			usleep(100);
 		}
 		struct timeval tv;
 		tv.tv_sec = 30;  /* 2 Secs Timeout */
