@@ -57,7 +57,6 @@ void handleArguments(struct settingsdata * settings,struct configsettings * defa
 					{
 						settings->filepath[x] = argv[i+1][x];
 					}
-					printf("%s\n",settings->filepath);
 				}
 			}
 		}
@@ -101,8 +100,6 @@ void handleConnection(struct thread_data * data)
 		tv.tv_sec = 30;  /* 2 Secs Timeout */
 		tv.tv_usec = 0;  // Not init'ing this can cause strange errors
 		setsockopt(data->clientsocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
-		printf("Thread %d processing the request\n", data->thread_id);
-		data->working = 1;
 		const int buffersize = 1024;
 		char * client_message = calloc(sizeof(char),buffersize);
 		char * message = calloc(sizeof(char),buffersize);
@@ -115,32 +112,23 @@ void handleConnection(struct thread_data * data)
 		httpbuff.client_message = client_message;
 
 
-		int read_size;
-		while( ( read_size = recv(data->clientsocket , client_message, buffersize, 0)) > 0)
+		recv(data->clientsocket , client_message, buffersize, 0);
+		
+		int offset = 0;
+		int returncode = 1;
+		do
 		{
-			printf("Something to read\n");
-			int offset = 0;
-			int returncode = 1;
-			do
-			{
-				memset(message,0,buffersize);
-				printf("Start before returncode\n");
-				returncode = HTTP_Request(&httpbuff);
-				printf("End before returncode \n");
-				offset++;
-				write(data->clientsocket,message,strlen(message));
-				printf("Thread nr %d has the returncode %d\n", data->thread_id,returncode);
-			} while(returncode != 0);
-		}
-		if(httpbuff.response)
-			free(httpbuff.response);
+			memset(message,0,buffersize);
+			returncode = HTTP_Request(&httpbuff);
+			offset++;
+			write(data->clientsocket,message,strlen(message));
+		} while(returncode != 0);
+
 		free(message);
 		free(client_message);
 		shutdown(data->clientsocket,SHUT_RDWR);
 		close(data->clientsocket);
 		data->clientsocket = 0;
-		data->working = 0;
-		printf("Thread %d is done processing the request\n", data->thread_id);
 	}
 }
 
@@ -151,7 +139,6 @@ void init_thread(pthread_t * thread,struct thread_data * data)
 	{
 		printf("Error from pthread_create\n");
 	}
-	printf("Done with spawn %d\n", data->thread_id);
 }
 
 

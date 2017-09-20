@@ -95,23 +95,20 @@ int main(int argc, char ** argv)
 	int threadIndex = 0;
 	while(1)
 	{
-		printf("%s\n","Listening");
 		listen(socket_desc, 50);
 		c = sizeof(struct sockaddr_in);
-		client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
-		printf("%s\n","Incoming connection");
+		client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c); //Recieve connection
 		if(client_sock < 0)
 		{
 			perror("Accept failed");
 			return 1;
 		}
-		while(t_data[threadIndex].clientsocket != 0)
+		while(t_data[threadIndex].clientsocket != 0) //Find a free thread
 		{
 			threadIndex = (threadIndex+1)%THREADPOOL_MAX;
 		}
-		t_data[threadIndex].clientsocket = client_sock;
+		t_data[threadIndex].clientsocket = client_sock; //Assign a socket to the found thread
 		client_sock = -1;
-		//spawn_connection(&threads[threadIndex], &t_data[threadIndex]);
 	}
 
 	/*Some cleanup stuff*/
