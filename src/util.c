@@ -94,7 +94,7 @@ void handleConnection(struct thread_data * data)
 	{
 		while(data->clientsocket == 0)
 		{
-			usleep(100);
+			usleep(1000);
 		}
 		struct timeval tv;
 		tv.tv_sec = 30;  /* 2 Secs Timeout */

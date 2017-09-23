@@ -34,7 +34,10 @@ void handle_signal(int signal)
 int main(int argc, char ** argv)
 {
 
+	int real = getuid();
 
+
+	
 
 	struct configsettings defaultsettings;
 	loadconfiguration(&defaultsettings);
@@ -91,7 +94,13 @@ int main(int argc, char ** argv)
 		perror("bind failed. Error");
 		return 1;
 	}
-	printf("%s %d\n","Socket created", server.sin_port);
+
+	if(!real)
+	{
+		setuid(1000);
+		setgid(1000);
+	}
+
 
 	int threadIndex = 0;
 	while(1)
