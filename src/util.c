@@ -115,6 +115,7 @@ void handleConnection(struct thread_data * data)
 		httpbuff.path[0] = '\0';
 		httpbuff.version = -1;
 		httpbuff.modified[0] = '\0';
+		httpbuff.content_type = 0;
 
 		recv(data->clientsocket , client_message, buffersize, 0);
 		

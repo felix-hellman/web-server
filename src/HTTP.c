@@ -109,6 +109,9 @@ void parsePath(struct HTTP_buffer *HTTP)
 			HTTP->method = -3;
 		i++;
 	}
+
+	if (strlen(tmp) >= 5 && strcmp(&tmp[strlen(tmp)-5], ".html") == 0)
+		HTTP->content_type = 1;
 }
 
 void parseVersion(struct HTTP_buffer *HTTP)
@@ -267,8 +270,12 @@ void createHeader(char *header, int length, struct HTTP_buffer *HTTP)
 		strlcat(header, HTTP->modified, HEADER_SIZE);
 		strlcat(header, "\r\nContent-Length: ", HEADER_SIZE);
 		char lengthstr[12];
-		snprintf(lengthstr, 13, "%d\r\nDate: ", length);
+		snprintf(lengthstr, 13, "%d", length);
 		strlcat(header, lengthstr, HEADER_SIZE);
+		if (HTTP->content_type == 1)
+			strlcat(header, "\r\nContent-Type: text/html\r\nDate: ", HEADER_SIZE);
+		else
+			strlcat(header, "\r\nContent-Type: application/octet-stream\r\nDate: ", HEADER_SIZE);
 		break;
 	case -1:
 		strlcat(header, "501 Not Implemented\r\nDate: ", HEADER_SIZE);
@@ -293,7 +300,7 @@ void createHeader(char *header, int length, struct HTTP_buffer *HTTP)
 	time(&rawtime);
 	datetime(datestring, &rawtime);
 	strlcat(header, datestring, HEADER_SIZE);
-	strlcat(header, "\r\nServer: AdamFelix\r\nContent-Type: text/html\r\n\r\n", HEADER_SIZE);
+	strlcat(header, "\r\nServer: AdamFelix\r\n\r\n", HEADER_SIZE);
 }
 
 void datetime(char *datestring, const time_t *timestamp)
