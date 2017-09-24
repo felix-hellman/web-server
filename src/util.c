@@ -110,7 +110,11 @@ void handleConnection(struct thread_data * data)
 		httpbuff.response = NULL;
 		httpbuff.offset = 0;
 		httpbuff.client_message = client_message;
-
+		httpbuff.method = 0;
+		httpbuff.raw_path[0] = '\0';
+		httpbuff.path[0] = '\0';
+		httpbuff.version = -1;
+		httpbuff.modified[0] = '\0';
 
 		recv(data->clientsocket , client_message, buffersize, 0);
 		

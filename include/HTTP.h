@@ -27,27 +27,27 @@ int parseRequest(struct HTTP_buffer *HTTP);
 /**
  * @brief Parses the HTTP method from the request
  */
-void parseMethod(const char *client_message, struct HTTP_request *request);
+void parseMethod(struct HTTP_buffer *HTTP);
 /**
  * @brief Parses the path from the request
  */
-void parsePath(const char *client_message, struct HTTP_request *request);
+void parsePath(struct HTTP_buffer *HTTP);
 /**
  * @brief Parses the HTTP version from the request
  */
-void parseVersion(const char *client_message, struct HTTP_request *request);
+void parseVersion(struct HTTP_buffer *HTTP);
 /**
  * @brief Creates a GET response
  */
-int GET(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int GET(struct HTTP_buffer *HTTP);
 /**
  * @brief Creates a HEAD response
  */
-int HEAD(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int HEAD(struct HTTP_buffer *HTTP);
 /**
  * @brief Creates an Error response
  */
-int ERROR(struct HTTP_buffer *HTTP, struct HTTP_request *request);
+int ERROR(struct HTTP_buffer *HTTP);
 /**
  * @brief Splits the response and place the parts in the buffer
  */
@@ -55,13 +55,13 @@ int sendBuffer(struct HTTP_buffer *HTTP);
 /**
  * @brief Copies file content to the response
  */
-void readFile(char *content, struct HTTP_request *request);
+void readFile(char *content, struct HTTP_buffer *HTTP);
 /**
  * @brief Creates the response header
  * @param header the string to put the created header in
- * @param request contains data values to put in the header
+ * @param HTTP contains data values to put in the header
  */
-void createHeader(char *header, int length, struct HTTP_request *request);
+void createHeader(char *header, int length, struct HTTP_buffer *HTTP);
 /**
  * @brief Makes a string of the correct date format to the HTTP header
  */
