@@ -120,6 +120,10 @@ int main(int argc, char ** argv)
 		setgid(1000);
 	}
 
+	char * dbg = calloc(sizeof(char),2);
+	dbg[0] = '/';
+	dbg[1] = '\0';
+
 	if(settings.requestHandlingMode == 't')
 	{
 		for(int i = 0; i < THREADPOOL_MAX; i++)
@@ -127,7 +131,7 @@ int main(int argc, char ** argv)
 			t_data[i].thread_id = i;
 			t_data[i].clientsocket = 0;
 			t_data[i].working = 1;
-			t_data[i].WWW = defaultsettings.rootdirectory;
+			t_data[i].WWW = dbg;
 			init_thread(&threads[i],&t_data[i]);
 		}
 	}
@@ -150,7 +154,6 @@ int main(int argc, char ** argv)
 		}
 		if(settings.requestHandlingMode == 't')
 		{
-			printf("yo\n");
 			while(t_data[threadIndex].clientsocket != 0) //Find a free thread
 			{
 				threadIndex = (threadIndex+1)%THREADPOOL_MAX;

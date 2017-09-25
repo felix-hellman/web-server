@@ -13,6 +13,7 @@ extern int errno;
 
 int HTTP_Request(struct HTTP_buffer *HTTP)
 {
+	printf("%s\n",HTTP->WWW);
 	if (HTTP->response == NULL) {
 		HTTP->response = calloc((RESPONSE_SIZE), sizeof(char));
 		HTTP->response[0] = '\0';
