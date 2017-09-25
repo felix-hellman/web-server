@@ -196,8 +196,6 @@ void daemonize()
 	if(rl.rlim_max == RLIM_INFINITY)
 		rl.rlim_max = 1024;
 
-	printf("Hei\n");
-
 	for(int i = 0; i < 1024; i++)
 	 close(i);
 

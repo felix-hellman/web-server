@@ -79,18 +79,7 @@ int main(int argc, char ** argv)
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
 
-	if(settings.requestHandlingMode == 't')
-	{
-		for(int i = 0; i < THREADPOOL_MAX; i++)
-		{
-			t_data[i].working = 0;
-			t_data[i].thread_id = i;
-			t_data[i].clientsocket = 0;
-			t_data[i].working = 1;
-			init_thread(&threads[i],&t_data[i]);
-		}
-	}
-
+	
 	chdir(defaultsettings.rootdirectory);
 	chroot(defaultsettings.rootdirectory);
 	chdir("/");
@@ -132,6 +121,18 @@ int main(int argc, char ** argv)
 		setgid(1000);
 	}
 
+	if(settings.requestHandlingMode == 't')
+	{
+		for(int i = 0; i < THREADPOOL_MAX; i++)
+		{
+			t_data[i].thread_id = i;
+			t_data[i].clientsocket = 0;
+			t_data[i].working = 1;
+			init_thread(&threads[i],&t_data[i]);
+		}
+	}
+
+
 	int threadIndex = 0;
 	res.settings = &settings;
 	res.listeningsocket = socket_desc;
@@ -149,6 +150,7 @@ int main(int argc, char ** argv)
 		}
 		if(settings.requestHandlingMode == 't')
 		{
+			printf("yo\n");
 			while(t_data[threadIndex].clientsocket != 0) //Find a free thread
 			{
 				threadIndex = (threadIndex+1)%THREADPOOL_MAX;

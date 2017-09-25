@@ -9,7 +9,7 @@
 #define HEADER_SIZE KB(1)
 #define RESPONSE_SIZE FILE_SIZE + HEADER_SIZE + 1
 #define DATE_SIZE 37
-#define WWW "/"
+#define WWW "/var/www"
 
 /**
  * @file HTTP.h
