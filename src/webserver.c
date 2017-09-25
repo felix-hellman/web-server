@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
 	int real = getuid();
 
 
-	
+
 
 	struct configsettings defaultsettings;
 	loadconfiguration(&defaultsettings);
@@ -73,7 +73,8 @@ int main(int argc, char ** argv)
 		init_thread(&threads[i],&t_data[i]);
 	}
 
-
+	chdir(defaultsettings.rootdirectory);
+	chroot(defaultsettings.rootdirectory);
 
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
@@ -99,6 +100,11 @@ int main(int argc, char ** argv)
 	{
 		setuid(1000);
 		setgid(1000);
+	}
+	else
+	{
+		printf("This program needs root access\nShutting down\n");
+		exit(0);
 	}
 
 
