@@ -7,26 +7,50 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include "HTTP.h"
 #include "util.h"
 #include "structs.h"
 #include "configloader.h"
 
-int THREADPOOL_MAX = 16;
+const int THREADPOOL_MAX = 16;
 
 int * socket_desc_ptr = NULL;
 
+struct resources
+{
+	int listeningsocket;
+	struct settingsdata * settings;
+	pthread_t * threads;
+	struct thread_data * t_data;
+};
 
+struct resources res;
 
 /**
- * @brief Handles sig_int and makes sure the program exits nicely
+ * @brief Handles sig_int and makes sure the server handle remaining requests
  */
 void handle_signal(int signal)
 {
 	printf("Signal : %d\n",signal);
-	shutdown(*socket_desc_ptr,SHUT_WR);
-	close(*socket_desc_ptr);
+
+	/*Some cleanup stuff*/
+	if(res.settings->requestHandlingMode == 't')
+	{
+		for(int i = 0; i < THREADPOOL_MAX; i++)
+			res.t_data[i].working = 0;
+		threadCleanup(res.threads,THREADPOOL_MAX);
+		pthread_exit(NULL);
+	}
+	else if (res.settings->requestHandlingMode == 'f')
+	{
+		wait(NULL);
+	}
+	if(res.settings->filepath)
+		free(res.settings->filepath);
+	shutdown(res.listeningsocket,SHUT_WR);
 	exit(0);
+	//close(*socket_desc_ptr);
 }
 /**
  * @brief Listens to listening port and dispatches work when a connection is established
@@ -35,9 +59,6 @@ int main(int argc, char ** argv)
 {
 
 	int real = getuid();
-
-
-
 
 	struct configsettings defaultsettings;
 	loadconfiguration(&defaultsettings);
@@ -72,6 +93,7 @@ int main(int argc, char ** argv)
 			t_data[i].working = 0;
 			t_data[i].thread_id = i;
 			t_data[i].clientsocket = 0;
+			t_data[i].working = 1;
 			init_thread(&threads[i],&t_data[i]);
 		}
 	}
@@ -112,7 +134,10 @@ int main(int argc, char ** argv)
 
 
 	int threadIndex = 0;
-	printf("%c\n",settings.requestHandlingMode);
+	res.settings = &settings;
+	res.listeningsocket = socket_desc;
+	res.threads = threads;
+	res.t_data = t_data;
 	while(1)
 	{
 		listen(socket_desc, 50);
@@ -143,12 +168,5 @@ int main(int argc, char ** argv)
 		}
 
 	}
-
-	/*Some cleanup stuff*/
-
-	threadCleanup(threads);
-	pthread_exit(NULL);
-	if(settings.filepath)
-		free(settings.filepath);
 	return 0;
 }

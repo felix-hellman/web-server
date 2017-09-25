@@ -36,7 +36,7 @@ void printUsage(char ** argv);
 /**
  * @brief Joins threads
  */
-void threadCleanup(pthread_t *threads);
+void threadCleanup(pthread_t *threads, int nr);
 /**
  * @brief Handles input arguments from commandline
  * @param settings a pointer to a struct settingsdata to be filled

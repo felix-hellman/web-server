@@ -1,7 +1,5 @@
 #include "util.h"
 
-static int THREADPOOL_MAX = 16;
-
 //Return 1 if argument is invalid
 int invalidArgument(char * argument)
 {
@@ -132,14 +130,17 @@ void handleConnection(int socketfd)
 
 void threadHandleConnection(struct thread_data * data)
 {
-	while(1)
+	while(data->working == 1)
 	{
-		while(data->clientsocket == 0)
+		if(data->clientsocket != 0)
+		{
+			handleConnection(data->clientsocket);
+			data->clientsocket = 0;
+		}
+		else
 		{
 			usleep(1000);
 		}
-		handleConnection(data->clientsocket);
-		data->clientsocket = 0;
 	}
 }
 
@@ -161,9 +162,9 @@ void printUsage(char ** argv)
 	printf("%s\n",helptext);
 }
 
-void threadCleanup(pthread_t *threads)
+void threadCleanup(pthread_t *threads, int nr)
 {
-	for(int i = 0; i < THREADPOOL_MAX; i++)
+	for(int i = 0; i < nr; i++)
 	{
 		pthread_join(threads[i],NULL);
 	}
