@@ -65,12 +65,15 @@ int main(int argc, char ** argv)
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
 
-	for(int i = 0; i < THREADPOOL_MAX; i++)
+	if(settings.requestHandlingMode == 't')
 	{
-		t_data[i].working = 0;
-		t_data[i].thread_id = i;
-		t_data[i].clientsocket = 0;
-		init_thread(&threads[i],&t_data[i]);
+		for(int i = 0; i < THREADPOOL_MAX; i++)
+		{
+			t_data[i].working = 0;
+			t_data[i].thread_id = i;
+			t_data[i].clientsocket = 0;
+			init_thread(&threads[i],&t_data[i]);
+		}
 	}
 
 	chdir(defaultsettings.rootdirectory);
@@ -109,6 +112,7 @@ int main(int argc, char ** argv)
 
 
 	int threadIndex = 0;
+	printf("%c\n",settings.requestHandlingMode);
 	while(1)
 	{
 		listen(socket_desc, 50);
@@ -119,12 +123,25 @@ int main(int argc, char ** argv)
 			perror("Accept failed");
 			return 1;
 		}
-		while(t_data[threadIndex].clientsocket != 0) //Find a free thread
+		if(settings.requestHandlingMode == 't')
 		{
-			threadIndex = (threadIndex+1)%THREADPOOL_MAX;
+			while(t_data[threadIndex].clientsocket != 0) //Find a free thread
+			{
+				threadIndex = (threadIndex+1)%THREADPOOL_MAX;
+			}
+			t_data[threadIndex].clientsocket = client_sock; //Assign a socket to the found thread
+			client_sock = -1;
 		}
-		t_data[threadIndex].clientsocket = client_sock; //Assign a socket to the found thread
-		client_sock = -1;
+		else if(settings.requestHandlingMode == 'f')
+		{
+			int forkid = fork();
+			if(forkid != 0)
+			{
+				handleConnection(client_sock);
+				exit(0);
+			}
+		}
+
 	}
 
 	/*Some cleanup stuff*/

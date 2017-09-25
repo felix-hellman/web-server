@@ -19,11 +19,12 @@
 
 
 
+void handleConnection(int socketfd);
 
 /**
  * @brief Handles connections, serves requests and closes sockets when done
  */
-void handleConnection(struct thread_data * data);
+void threadHandleConnection(struct thread_data * data);
 /**
  * @brief Calls the handleConnection in a separate thread
  */
