@@ -71,8 +71,8 @@ void parsePath(struct HTTP_buffer *HTTP)
 		stepper++;
 
 	char tmp[PATH_MAX];
-	strlcpy(tmp, WWW, sizeof(tmp));
-	int i = strlen(WWW);
+	strlcpy(tmp, HTTP->WWW, sizeof(tmp));
+	int i = strlen(HTTP->WWW);
 	if (HTTP->client_message[stepper] != '/')
 		tmp[i++] = '/';
 	int j = 0;
@@ -82,7 +82,7 @@ void parsePath(struct HTTP_buffer *HTTP)
 	HTTP->client_message[stepper] != '\0' &&
 	HTTP->client_message[stepper] != '\\' &&
 	stepper < strlen(HTTP->client_message) &&
-	i < (PATH_MAX - 1 - strlen("index.html") - strlen(WWW))) { //making room for WWW and possible index.html
+	i < (PATH_MAX - 1 - strlen("index.html") - strlen(HTTP->WWW))) { //making room for WWW and possible index.html
 		tmp[i++] = HTTP->client_message[stepper];
 		HTTP->raw_path[j++] = HTTP->client_message[stepper];
 		stepper++;
@@ -105,8 +105,8 @@ void parsePath(struct HTTP_buffer *HTTP)
 
 	//Make sure the resolved path is still in WWW folder
 	i = 0;
-	while (i < strlen(WWW)) {
-		if (i >= strlen(tmp) && WWW[i] != tmp[i])
+	while (i < strlen(HTTP->WWW)) {
+		if (i >= strlen(tmp) && HTTP->WWW[i] != tmp[i])
 			HTTP->method = -3;
 		i++;
 	}
@@ -226,7 +226,7 @@ int sendBuffer(struct HTTP_buffer *HTTP)
 {
 	int orig_buffersize = HTTP->buffersize;
 	if (HTTP->response_size - (HTTP->buffersize * HTTP->offset) < HTTP->buffersize)
-	       HTTP->buffersize = HTTP->response_size - (HTTP->buffersize * HTTP->offset);	
+	       HTTP->buffersize = HTTP->response_size - (HTTP->buffersize * HTTP->offset);
 	memcpy(HTTP->buffer, &HTTP->response[orig_buffersize * HTTP->offset], HTTP->buffersize);
 	if (HTTP->response_size > (HTTP->offset+1)*orig_buffersize) {
 		return 1;

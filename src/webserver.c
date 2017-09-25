@@ -73,16 +73,15 @@ int main(int argc, char ** argv)
 	}
 
 	handleArguments(&settings,&defaultsettings,argc,argv);
-	cleanconfigsettings(&defaultsettings);
+	//cleanconfigsettings(&defaultsettings);
 
 
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
 
-	
+
 	chdir(defaultsettings.rootdirectory);
 	chroot(defaultsettings.rootdirectory);
-	chdir("/");
 
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
@@ -128,6 +127,7 @@ int main(int argc, char ** argv)
 			t_data[i].thread_id = i;
 			t_data[i].clientsocket = 0;
 			t_data[i].working = 1;
+			t_data[i].WWW = defaultsettings.rootdirectory;
 			init_thread(&threads[i],&t_data[i]);
 		}
 	}
@@ -162,7 +162,7 @@ int main(int argc, char ** argv)
 		{
 			if(fork() != 0)
 			{
-				handleConnection(client_sock);
+				handleConnection(client_sock,defaultsettings.rootdirectory);
 				exit(0);
 			}
 		}

@@ -86,7 +86,7 @@ void handleArguments(struct settingsdata * settings,struct configsettings * defa
 	}
 }
 
-void handleConnection(int socketfd)
+void handleConnection(int socketfd,char * rootdir)
 {
 	struct timeval tv;
 	tv.tv_sec = 30;  /* 2 Secs Timeout */
@@ -110,6 +110,7 @@ void handleConnection(int socketfd)
 	httpbuff.content_type = 0;
 	httpbuff.content_length = 0;
 	httpbuff.response_size = 0;
+	httpbuff.WWW = rootdir;
 
 
 	recv(socketfd , client_message, buffersize, 0);
@@ -135,7 +136,7 @@ void threadHandleConnection(struct thread_data * data)
 	{
 		if(data->clientsocket != 0)
 		{
-			handleConnection(data->clientsocket);
+			handleConnection(data->clientsocket,data->WWW);
 			data->clientsocket = 0;
 		}
 		else

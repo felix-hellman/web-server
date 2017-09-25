@@ -24,6 +24,7 @@ struct thread_data
  int working; ///< is 1 if working and 0 if done with handling a request
  int clientsocket; ///< client socket passed to the thread for processing a request
  int thread_id;
+ char * WWW;
 };
 struct HTTP_buffer
 {
@@ -40,6 +41,7 @@ struct HTTP_buffer
 	int content_type;///< contet-type fo requested file. 0=application/octet-stream, 1=text/html
 	size_t content_length;///< size of the content in bytes
 	int response_size;///< size of the entire response
+  char * WWW;
 };
 
 #endif
