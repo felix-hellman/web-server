@@ -38,6 +38,8 @@ struct HTTP_buffer
 	int version;///< HTTP version number 9, 10 or 11 for HTTP/[0.9|1.0|1.1]
 	char modified[37];///< last time modified for the requested file
 	int content_type;///< contet-type fo requested file. 0=application/octet-stream, 1=text/html
+	size_t content_length;///< size of the content in bytes
+	int response_size;///< size of the entire response
 };
 
 #endif

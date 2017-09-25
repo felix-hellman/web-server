@@ -88,6 +88,7 @@ void parsePath(struct HTTP_buffer *HTTP)
 		stepper++;
 	}
 	tmp[i] = '\0';
+	HTTP->raw_path[j] = '\0';
 
 	if (tmp[i-1] == '/')
 		strlcat(tmp, "index.html", sizeof(tmp));
@@ -163,14 +164,13 @@ int GET(struct HTTP_buffer *HTTP)
 	if (HTTP->method != 1)
 		return ERROR(HTTP);
 
-	int length = strlen(content);
-	char header[HEADER_SIZE];
+	char header[HEADER_SIZE] = "";
 	if (HTTP->version != 9) {
-		createHeader(header, length, HTTP);
+		createHeader(header, HTTP);
 		strlcat(HTTP->response, header, RESPONSE_SIZE);
 	}
-	strlcat(HTTP->response, content, RESPONSE_SIZE);
-
+	HTTP->response_size = HTTP->content_length + strlen(header);
+	memcpy(&HTTP->response[strlen(header)], content, HTTP->content_length);
 	return sendBuffer(HTTP);
 }
 
@@ -182,10 +182,10 @@ int HEAD(struct HTTP_buffer *HTTP)
 	if (HTTP->method != 2)
 		return ERROR(HTTP);
 
-	int length = strlen(content);
 	char header[HEADER_SIZE];
-	createHeader(header, length, HTTP);
+	createHeader(header, HTTP);
 	strlcpy(HTTP->response, header, RESPONSE_SIZE);
+	HTTP->response_size = strlen(header);
 
 	return sendBuffer(HTTP);
 }
@@ -211,20 +211,24 @@ int ERROR(struct HTTP_buffer *HTTP)
 		strlcpy(content, "500 Internal Server Error\n", sizeof(content));
 		break;
 	}
-	int length = strlen(content);
+	HTTP->content_length = strlen(content);
 	char header[HEADER_SIZE];
 	if (HTTP->version != 9) {
-		createHeader(header, length, HTTP);
+		createHeader(header, HTTP);
 		strlcat(HTTP->response, header, FILE_SIZE);
 	}
-	strlcat(HTTP->response, content, FILE_SIZE);
+	HTTP->response_size = HTTP->content_length + strlen(header);
+	memcpy(&HTTP->response[strlen(header)], content, HTTP->content_length);
 	return sendBuffer(HTTP);
 }
 
 int sendBuffer(struct HTTP_buffer *HTTP)
 {
-	memcpy(HTTP->buffer, &HTTP->response[HTTP->buffersize * HTTP->offset], HTTP->buffersize);
-	if (strlen(HTTP->response) > (HTTP->offset+2)*HTTP->buffersize) {
+	int orig_buffersize = HTTP->buffersize;
+	if (HTTP->response_size - (HTTP->buffersize * HTTP->offset) < HTTP->buffersize)
+	       HTTP->buffersize = HTTP->response_size - (HTTP->buffersize * HTTP->offset);	
+	memcpy(HTTP->buffer, &HTTP->response[orig_buffersize * HTTP->offset], HTTP->buffersize);
+	if (HTTP->response_size > (HTTP->offset+1)*orig_buffersize) {
 		return 1;
 	} else {
 		free(HTTP->response);
@@ -235,7 +239,9 @@ int sendBuffer(struct HTTP_buffer *HTTP)
 
 void readFile(char *content, struct HTTP_buffer *HTTP)
 {
-	FILE *file = fopen(HTTP->path, "r");
+	FILE *file = fopen(HTTP->path, "rb");
+	char datestring[DATE_SIZE] = "";
+	struct stat mod;
 
 	if (file == NULL) {
 		int errnum = errno;
@@ -243,24 +249,19 @@ void readFile(char *content, struct HTTP_buffer *HTTP)
 			HTTP->method = -3;
 		else
 			HTTP->method = 0;
-	}  else {
-		char ch;
-		int i = 0;
-		while ((ch = fgetc(file)) != EOF && i < (FILE_SIZE-1))
-			content[i++] = ch;
-		content[i] = '\0';
-
-		char datestring[DATE_SIZE] = "";
-		struct stat mod;
-		if (!stat(HTTP->path, &mod)) {
-			datetime(datestring, &mod.st_ctime);
-		}
+	}  else if (!stat(HTTP->path, &mod) && mod.st_size < FILE_SIZE) {
+		fread(content, mod.st_size, 1, file);
+		HTTP->content_length = mod.st_size;
+		datetime(datestring, &mod.st_ctime);
 		strlcpy(HTTP->modified, datestring, DATE_SIZE);
+		fclose(file);
+	} else {
+		HTTP->method = 0;
 		fclose(file);
 	}
 }
 
-void createHeader(char *header, int length, struct HTTP_buffer *HTTP)
+void createHeader(char *header, struct HTTP_buffer *HTTP)
 {
 	strlcpy(header, "HTTP/1.0 ", HEADER_SIZE);
 	switch (HTTP->method) {
@@ -270,7 +271,7 @@ void createHeader(char *header, int length, struct HTTP_buffer *HTTP)
 		strlcat(header, HTTP->modified, HEADER_SIZE);
 		strlcat(header, "\r\nContent-Length: ", HEADER_SIZE);
 		char lengthstr[12];
-		snprintf(lengthstr, 13, "%d", length);
+		snprintf(lengthstr, 12, "%zu", HTTP->content_length);
 		strlcat(header, lengthstr, HEADER_SIZE);
 		if (HTTP->content_type == 1)
 			strlcat(header, "\r\nContent-Type: text/html\r\nDate: ", HEADER_SIZE);

@@ -116,17 +116,18 @@ void handleConnection(struct thread_data * data)
 		httpbuff.version = -1;
 		httpbuff.modified[0] = '\0';
 		httpbuff.content_type = 0;
+		httpbuff.content_length = 0;
+		httpbuff.response_size = 0;
 
 		recv(data->clientsocket , client_message, buffersize, 0);
 		
-		int offset = 0;
 		int returncode = 1;
 		do
 		{
 			memset(message,0,buffersize);
 			returncode = HTTP_Request(&httpbuff);
-			offset++;
-			write(data->clientsocket,message,strlen(message));
+			httpbuff.offset++;
+			write(data->clientsocket,message,httpbuff.buffersize);
 		} while(returncode != 0);
 
 		free(message);

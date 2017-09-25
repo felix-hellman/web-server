@@ -61,7 +61,7 @@ void readFile(char *content, struct HTTP_buffer *HTTP);
  * @param header the string to put the created header in
  * @param HTTP contains data values to put in the header
  */
-void createHeader(char *header, int length, struct HTTP_buffer *HTTP);
+void createHeader(char *header, struct HTTP_buffer *HTTP);
 /**
  * @brief Makes a string of the correct date format to the HTTP header
  */
