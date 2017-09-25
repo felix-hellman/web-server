@@ -169,3 +169,41 @@ void threadCleanup(pthread_t *threads, int nr)
 		pthread_join(threads[i],NULL);
 	}
 }
+
+void daemonize()
+{
+	struct sigaction sa;
+	struct rlimit rl;
+
+	umask(0);
+
+	if(getrlimit(RLIMIT_NOFILE, &rl))
+		perror(NULL);
+
+	if(fork() != 0)
+		exit(0);
+	setsid(); //New session id
+
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGHUP,&sa,NULL);
+
+	if(fork() != 0)
+		exit(0);
+	chdir("/");
+
+	if(rl.rlim_max == RLIM_INFINITY)
+		rl.rlim_max = 1024;
+
+	printf("Hei\n");
+
+	for(int i = 0; i < 1024; i++)
+	 close(i);
+
+	open("/dev/null",O_RDWR);
+	dup(0);
+	dup(0);
+
+	openlog("Webserver",LOG_CONS,LOG_DAEMON);
+}

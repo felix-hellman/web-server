@@ -74,14 +74,7 @@ int main(int argc, char ** argv)
 
 	handleArguments(&settings,&defaultsettings,argc,argv);
 	cleanconfigsettings(&defaultsettings);
-	if(settings.daemonMode == 1)
-	{
-		int pid = fork();
-		close(STDOUT_FILENO);
-		close(STDERR_FILENO);
-		if(pid != 0)
-			exit(0);
-	}
+
 
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
@@ -100,38 +93,44 @@ int main(int argc, char ** argv)
 
 	chdir(defaultsettings.rootdirectory);
 	chroot(defaultsettings.rootdirectory);
+	chdir("/");
 
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
 
+
+
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port = htons(settings.listeningport);
+
+
+
+	if(real != 0)
+	{
+		printf("This program needs root access\nShutting down\n");
+		exit(0);
+	}
+	if(settings.daemonMode == 1)
+	{
+		daemonize();
+	}
 	socket_desc = socket(AF_INET, SOCK_STREAM,0);
 	socket_desc_ptr = &socket_desc;
 	if(socket_desc == -1)
 	{
 		printf("Could not create socket\n");
 	}
-
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(settings.listeningport);
-
 	if(bind(socket_desc,(struct sockaddr *)&server, sizeof(server)) < 0)
 	{
 		perror("bind failed. Error");
 		return 1;
 	}
-
-	if(!real)
+	if(real == 0)
 	{
 		setuid(1000);
 		setgid(1000);
 	}
-	else
-	{
-		printf("This program needs root access\nShutting down\n");
-		exit(0);
-	}
-
 
 	int threadIndex = 0;
 	res.settings = &settings;
@@ -159,8 +158,7 @@ int main(int argc, char ** argv)
 		}
 		else if(settings.requestHandlingMode == 'f')
 		{
-			int forkid = fork();
-			if(forkid != 0)
+			if(fork() != 0)
 			{
 				handleConnection(client_sock);
 				exit(0);

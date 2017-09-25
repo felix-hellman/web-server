@@ -11,6 +11,14 @@
 #include "HTTP.h"
 #include "structs.h"
 #include <sys/time.h>
+#include <sys/resource.h>
+#include <signal.h>
+#include <syslog.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 
 /**
  * @file util.h
@@ -44,6 +52,12 @@ void threadCleanup(pthread_t *threads, int nr);
  * @param argv vector of arguments
  */
 void handleArguments(struct settingsdata * settings,struct configsettings * defaultsettings, int argc, char ** argv);
+
+
+/**
+  * @brief Daemonizes the process
+  */
+void daemonize();
 
 
 
