@@ -7,26 +7,50 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include "HTTP.h"
 #include "util.h"
 #include "structs.h"
 #include "configloader.h"
 
-int THREADPOOL_MAX = 16;
+const int THREADPOOL_MAX = 16;
 
 int * socket_desc_ptr = NULL;
 
+struct resources
+{
+	int listeningsocket;
+	struct settingsdata * settings;
+	pthread_t * threads;
+	struct thread_data * t_data;
+};
 
+struct resources res;
 
 /**
- * @brief Handles sig_int and makes sure the program exits nicely
+ * @brief Handles sig_int and makes sure the server handle remaining requests
  */
 void handle_signal(int signal)
 {
 	printf("Signal : %d\n",signal);
-	shutdown(*socket_desc_ptr,SHUT_WR);
-	close(*socket_desc_ptr);
+
+	/*Some cleanup stuff*/
+	if(res.settings->requestHandlingMode == 't')
+	{
+		for(int i = 0; i < THREADPOOL_MAX; i++)
+			res.t_data[i].working = 0;
+		threadCleanup(res.threads,THREADPOOL_MAX);
+		pthread_exit(NULL);
+	}
+	else if (res.settings->requestHandlingMode == 'f')
+	{
+		wait(NULL);
+	}
+	if(res.settings->filepath)
+		free(res.settings->filepath);
+	shutdown(res.listeningsocket,SHUT_WR);
 	exit(0);
+	//close(*socket_desc_ptr);
 }
 /**
  * @brief Listens to listening port and dispatches work when a connection is established
@@ -35,9 +59,6 @@ int main(int argc, char ** argv)
 {
 
 	int real = getuid();
-
-
-	
 
 	struct configsettings defaultsettings;
 	loadconfiguration(&defaultsettings);
@@ -53,56 +74,70 @@ int main(int argc, char ** argv)
 
 	handleArguments(&settings,&defaultsettings,argc,argv);
 	cleanconfigsettings(&defaultsettings);
-	if(settings.daemonMode == 1)
-	{
-		int pid = fork();
-		close(STDOUT_FILENO);
-		close(STDERR_FILENO);
-		if(pid != 0)
-			exit(0);
-	}
+
 
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
 
-	for(int i = 0; i < THREADPOOL_MAX; i++)
-	{
-		t_data[i].working = 0;
-		t_data[i].thread_id = i;
-		t_data[i].clientsocket = 0;
-		init_thread(&threads[i],&t_data[i]);
-	}
-
-
+	
+	chdir(defaultsettings.rootdirectory);
+	chroot(defaultsettings.rootdirectory);
+	chdir("/");
 
 	int socket_desc, client_sock, c;
 	struct sockaddr_in server, client;
 
+
+
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port = htons(settings.listeningport);
+
+
+
+	if(real != 0)
+	{
+		printf("This program needs root access\nShutting down\n");
+		exit(0);
+	}
+	if(settings.daemonMode == 1)
+	{
+		daemonize();
+	}
 	socket_desc = socket(AF_INET, SOCK_STREAM,0);
 	socket_desc_ptr = &socket_desc;
 	if(socket_desc == -1)
 	{
 		printf("Could not create socket\n");
 	}
-
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(settings.listeningport);
-
 	if(bind(socket_desc,(struct sockaddr *)&server, sizeof(server)) < 0)
 	{
 		perror("bind failed. Error");
 		return 1;
 	}
-
-	if(!real)
+	if(real == 0)
 	{
 		setuid(1000);
 		setgid(1000);
 	}
 
+	if(settings.requestHandlingMode == 't')
+	{
+		for(int i = 0; i < THREADPOOL_MAX; i++)
+		{
+			t_data[i].thread_id = i;
+			t_data[i].clientsocket = 0;
+			t_data[i].working = 1;
+			init_thread(&threads[i],&t_data[i]);
+		}
+	}
+
 
 	int threadIndex = 0;
+	res.settings = &settings;
+	res.listeningsocket = socket_desc;
+	res.threads = threads;
+	res.t_data = t_data;
 	while(1)
 	{
 		listen(socket_desc, 50);
@@ -113,19 +148,25 @@ int main(int argc, char ** argv)
 			perror("Accept failed");
 			return 1;
 		}
-		while(t_data[threadIndex].clientsocket != 0) //Find a free thread
+		if(settings.requestHandlingMode == 't')
 		{
-			threadIndex = (threadIndex+1)%THREADPOOL_MAX;
+			printf("yo\n");
+			while(t_data[threadIndex].clientsocket != 0) //Find a free thread
+			{
+				threadIndex = (threadIndex+1)%THREADPOOL_MAX;
+			}
+			t_data[threadIndex].clientsocket = client_sock; //Assign a socket to the found thread
+			client_sock = -1;
 		}
-		t_data[threadIndex].clientsocket = client_sock; //Assign a socket to the found thread
-		client_sock = -1;
+		else if(settings.requestHandlingMode == 'f')
+		{
+			if(fork() != 0)
+			{
+				handleConnection(client_sock);
+				exit(0);
+			}
+		}
+
 	}
-
-	/*Some cleanup stuff*/
-
-	threadCleanup(threads);
-	pthread_exit(NULL);
-	if(settings.filepath)
-		free(settings.filepath);
 	return 0;
 }

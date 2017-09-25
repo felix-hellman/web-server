@@ -1,7 +1,5 @@
 #include "util.h"
 
-static int THREADPOOL_MAX = 16;
-
 //Return 1 if argument is invalid
 int invalidArgument(char * argument)
 {
@@ -22,7 +20,7 @@ void handleArguments(struct settingsdata * settings,struct configsettings * defa
 {
 	settings->filepath = NULL;
 	settings->daemonMode = 0;
-	settings->requestHandlingMode = 'T';
+	settings->requestHandlingMode = 't';
 	settings->listeningport = 8080;
 	if(defaultsettings->port != 0) //Other default was read from config file
 	{
@@ -76,11 +74,11 @@ void handleArguments(struct settingsdata * settings,struct configsettings * defa
 				{
 					if (strcmp(argv[i+1],"fork"))
 					{
-						settings->requestHandlingMode = 'F';
+						settings->requestHandlingMode = 'f';
 					}
 					if (strcmp(argv[i+1],"thread"))
 					{
-						settings->requestHandlingMode = 'T';
+						settings->requestHandlingMode = 't';
 					}
 				}
 			}
@@ -88,59 +86,68 @@ void handleArguments(struct settingsdata * settings,struct configsettings * defa
 	}
 }
 
-void handleConnection(struct thread_data * data)
+void handleConnection(int socketfd)
 {
-	while(1)
+	struct timeval tv;
+	tv.tv_sec = 30;  /* 2 Secs Timeout */
+	tv.tv_usec = 0;  // Not init'ing this can cause strange errors
+	setsockopt(socketfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
+	const int buffersize = 1024;
+	char * client_message = calloc(sizeof(char),buffersize);
+	char * message = calloc(sizeof(char),buffersize);
+
+	struct HTTP_buffer httpbuff;
+	httpbuff.buffer = message;
+	httpbuff.buffersize = buffersize;
+	httpbuff.response = NULL;
+	httpbuff.offset = 0;
+	httpbuff.client_message = client_message;
+	httpbuff.method = 0;
+	httpbuff.raw_path[0] = '\0';
+	httpbuff.path[0] = '\0';
+	httpbuff.version = -1;
+	httpbuff.modified[0] = '\0';
+	httpbuff.content_type = 0;
+	httpbuff.content_length = 0;
+	httpbuff.response_size = 0;
+
+
+	recv(socketfd , client_message, buffersize, 0);
+
+	int returncode = 1;
+	do
 	{
-		while(data->clientsocket == 0)
+		memset(message,0,buffersize);
+		returncode = HTTP_Request(&httpbuff);
+		httpbuff.offset++;
+		write(socketfd,message,httpbuff.buffersize);
+	} while(returncode != 0);
+
+	free(message);
+	free(client_message);
+	shutdown(socketfd,SHUT_RDWR);
+	close(socketfd);
+}
+
+void threadHandleConnection(struct thread_data * data)
+{
+	while(data->working == 1)
+	{
+		if(data->clientsocket != 0)
+		{
+			handleConnection(data->clientsocket);
+			data->clientsocket = 0;
+		}
+		else
 		{
 			usleep(1000);
 		}
-		struct timeval tv;
-		tv.tv_sec = 30;  /* 2 Secs Timeout */
-		tv.tv_usec = 0;  // Not init'ing this can cause strange errors
-		setsockopt(data->clientsocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
-		const int buffersize = 1024;
-		char * client_message = calloc(sizeof(char),buffersize);
-		char * message = calloc(sizeof(char),buffersize);
-
-		struct HTTP_buffer httpbuff;
-		httpbuff.buffer = message;
-		httpbuff.buffersize = buffersize;
-		httpbuff.response = NULL;
-		httpbuff.offset = 0;
-		httpbuff.client_message = client_message;
-		httpbuff.method = 0;
-		httpbuff.raw_path[0] = '\0';
-		httpbuff.path[0] = '\0';
-		httpbuff.version = -1;
-		httpbuff.modified[0] = '\0';
-		httpbuff.content_type = 0;
-		httpbuff.content_length = 0;
-		httpbuff.response_size = 0;
-
-		recv(data->clientsocket , client_message, buffersize, 0);
-		
-		int returncode = 1;
-		do
-		{
-			memset(message,0,buffersize);
-			returncode = HTTP_Request(&httpbuff);
-			httpbuff.offset++;
-			write(data->clientsocket,message,httpbuff.buffersize);
-		} while(returncode != 0);
-
-		free(message);
-		free(client_message);
-		shutdown(data->clientsocket,SHUT_RDWR);
-		close(data->clientsocket);
-		data->clientsocket = 0;
 	}
 }
 
 void init_thread(pthread_t * thread,struct thread_data * data)
 {
-	int errorcode = pthread_create(thread,NULL,(void *)handleConnection,(void *) data);
+	int errorcode = pthread_create(thread,NULL,(void *)threadHandleConnection,(void *) data);
 	if(errorcode)
 	{
 		printf("Error from pthread_create\n");
@@ -156,10 +163,46 @@ void printUsage(char ** argv)
 	printf("%s\n",helptext);
 }
 
-void threadCleanup(pthread_t *threads)
+void threadCleanup(pthread_t *threads, int nr)
 {
-	for(int i = 0; i < THREADPOOL_MAX; i++)
+	for(int i = 0; i < nr; i++)
 	{
 		pthread_join(threads[i],NULL);
 	}
+}
+
+void daemonize()
+{
+	struct sigaction sa;
+	struct rlimit rl;
+
+	umask(0);
+
+	if(getrlimit(RLIMIT_NOFILE, &rl))
+		perror(NULL);
+
+	if(fork() != 0)
+		exit(0);
+	setsid(); //New session id
+
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGHUP,&sa,NULL);
+
+	if(fork() != 0)
+		exit(0);
+	chdir("/");
+
+	if(rl.rlim_max == RLIM_INFINITY)
+		rl.rlim_max = 1024;
+
+	for(int i = 0; i < 1024; i++)
+	 close(i);
+
+	open("/dev/null",O_RDWR);
+	dup(0);
+	dup(0);
+
+	openlog("Webserver",LOG_CONS,LOG_DAEMON);
 }

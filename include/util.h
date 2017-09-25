@@ -11,6 +11,14 @@
 #include "HTTP.h"
 #include "structs.h"
 #include <sys/time.h>
+#include <sys/resource.h>
+#include <signal.h>
+#include <syslog.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 
 /**
  * @file util.h
@@ -19,11 +27,12 @@
 
 
 
+void handleConnection(int socketfd);
 
 /**
  * @brief Handles connections, serves requests and closes sockets when done
  */
-void handleConnection(struct thread_data * data);
+void threadHandleConnection(struct thread_data * data);
 /**
  * @brief Calls the handleConnection in a separate thread
  */
@@ -35,7 +44,7 @@ void printUsage(char ** argv);
 /**
  * @brief Joins threads
  */
-void threadCleanup(pthread_t *threads);
+void threadCleanup(pthread_t *threads, int nr);
 /**
  * @brief Handles input arguments from commandline
  * @param settings a pointer to a struct settingsdata to be filled
@@ -43,6 +52,12 @@ void threadCleanup(pthread_t *threads);
  * @param argv vector of arguments
  */
 void handleArguments(struct settingsdata * settings,struct configsettings * defaultsettings, int argc, char ** argv);
+
+
+/**
+  * @brief Daemonizes the process
+  */
+void daemonize();
 
 
 
