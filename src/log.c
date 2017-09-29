@@ -35,6 +35,7 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 		if(fork() == 0)
 		{
 			chdir("/");
+			chroot("/");
 			openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
 			syslog (LOG_NOTICE, "Program started by User %d", getuid ());
