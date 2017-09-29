@@ -32,7 +32,9 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 
 	else
 	{
+		openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 		syslog(6,buffer,buffersize);
+		closelog();
 	}
 
 	free(buffer);
