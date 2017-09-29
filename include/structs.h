@@ -2,6 +2,7 @@
 #define STRUCTS_H
 
 #include <limits.h>
+#define pipename "LOGPIPE"
 /**
  * @file structs.h
  * @brief All structs used are defined here

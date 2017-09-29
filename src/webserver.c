@@ -18,6 +18,7 @@
 const int THREADPOOL_MAX = 16;
 
 int * socket_desc_ptr = NULL;
+int logpid;
 
 struct resources
 {
@@ -37,6 +38,8 @@ void handle_signal(int signal)
 	printf("Signal : %d\n",signal);
 
 	/*Some cleanup stuff*/
+	if (logpid != 0)
+		kill(logpid, 2);
 	if(res.settings->requestHandlingMode == 't')
 	{
 		for(int i = 0; i < THREADPOOL_MAX; i++)
@@ -81,6 +84,29 @@ int main(int argc, char ** argv)
 	pthread_t threads[THREADPOOL_MAX];
 	struct thread_data t_data[THREADPOOL_MAX];
 
+	//fork logging	before jailing
+	logpid = fork();
+	if (logpid == 0)
+	{
+		chdir(defaultsettings.rootdirectory);
+		mkfifo(pipename, 0666);
+		int fd;
+		if ((fd = open(pipename, O_WRONLY)) < 0) {
+			perror("Can't create log pipe");
+			close(fd);
+		} else if ((fd = open(pipename, O_RDONLY)) < 0) {
+			perror("Can't read log pipe");
+		} else {
+			char buf[1024];
+			openlog ("webserver", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+			while (1) {
+				read(fd, buf, 1024);
+				syslog(LOG_INFO, buf, 1024);
+				sleep(1);
+			}
+		}
+		exit(0);
+	}
 
 	chdir(defaultsettings.rootdirectory);
 	chroot(defaultsettings.rootdirectory);

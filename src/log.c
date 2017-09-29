@@ -34,19 +34,14 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 
 	else
 	{
-		if(fork() == 0)
-		{
-			chdir("/");
-			chroot("/");
-			openlog ("webserver", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-			syslog (LOG_INFO, buffer, buffersize);
-
-			closelog ();
-			exit(0);
+		int fd;
+		if ((fd = open(pipename, O_WRONLY)) < 0) {
+			perror("Can't open log pipe");
+		} else {
+			if (write(fd, buffer, buffersize) != buffersize)
+				perror("Error while writing to log pipe");
+			close(fd);
 		}
-		wait(NULL);
-
 	}
 
 	free(buffer);
