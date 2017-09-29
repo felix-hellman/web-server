@@ -6,7 +6,7 @@
 #include <bsd/string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/syslog.h>
+#include <syslog.h>
 #include "log.h"
 
 void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
@@ -32,9 +32,20 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 
 	else
 	{
-		openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-		syslog(6,buffer,buffersize);
-		closelog();
+		if(fork() == 0)
+		{
+			chdir("/");
+			chroot("/");
+			openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+			syslog (LOG_NOTICE, "Program started by User %d", getuid ());
+			syslog (LOG_INFO, "A tree falls in a forest");
+
+			closelog ();
+			exit(0);
+		}
+
+
 	}
 
 	free(buffer);
