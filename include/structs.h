@@ -25,6 +25,8 @@ struct thread_data
  int clientsocket; ///< client socket passed to the thread for processing a request
  int thread_id;
  char * WWW;
+ char * logpath;
+ char * address;
 };
 struct HTTP_buffer
 {
@@ -45,7 +47,7 @@ struct HTTP_buffer
 };
 struct log_entry
 {
-	char ip[20];///< client IP
+	char * ip;///< client IP
 	char date[28];///< date and time of the request
 	char request[900];///< the HTTP request
 	char code[4];///< response code

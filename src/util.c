@@ -87,7 +87,7 @@ void handleArguments(struct settingsdata * settings,struct configsettings * defa
 	}
 }
 
-void handleConnection(int socketfd,char * rootdir)
+void handleConnection(int socketfd,char * rootdir,char * logpath,char * address)
 {
 	struct timeval tv;
 	tv.tv_sec = 30;  /* 2 Secs Timeout */
@@ -125,7 +125,7 @@ void handleConnection(int socketfd,char * rootdir)
 		write(socketfd,message,httpbuff.buffersize);
 	} while(returncode != 0);
 
-	writeToLog("g", &httpbuff, 1);
+	writeToLog(logpath, &httpbuff, address);
 	free(message);
 	free(client_message);
 	shutdown(socketfd,SHUT_RDWR);
@@ -138,7 +138,7 @@ void threadHandleConnection(struct thread_data * data)
 	{
 		if(data->clientsocket != 0)
 		{
-			handleConnection(data->clientsocket,data->WWW);
+			handleConnection(data->clientsocket,data->WWW,data->logpath,data->address);
 			data->clientsocket = 0;
 		}
 		else

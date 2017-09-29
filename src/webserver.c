@@ -3,11 +3,13 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <bsd/string.h>
 #include "HTTP.h"
 #include "util.h"
 #include "structs.h"
@@ -116,6 +118,9 @@ int main(int argc, char ** argv)
 	}
 	if(real == 0)
 	{
+		int f = open(settings.filepath, O_CREAT, S_IWUSR | S_IRGRP | S_IWOTH);
+		close(f);
+		chown(settings.filepath,1000,1000);
 		setuid(1000);
 		setgid(1000);
 	}
@@ -132,6 +137,8 @@ int main(int argc, char ** argv)
 			t_data[i].clientsocket = 0;
 			t_data[i].working = 1;
 			t_data[i].WWW = dbg;
+			t_data[i].logpath = settings.filepath;
+			t_data[i].address = calloc(sizeof(char),INET6_ADDRSTRLEN);
 			init_thread(&threads[i],&t_data[i]);
 		}
 	}
@@ -147,6 +154,11 @@ int main(int argc, char ** argv)
 		listen(socket_desc, 50);
 		c = sizeof(struct sockaddr_in);
 		client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c); //Recieve connection
+		/*Get the ipv4 address*/
+		struct sockaddr_in *s = (struct sockaddr_in *)&client;
+		char ipstr[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+
 		if(client_sock < 0)
 		{
 			perror("Accept failed");
@@ -158,6 +170,7 @@ int main(int argc, char ** argv)
 			{
 				threadIndex = (threadIndex+1)%THREADPOOL_MAX;
 			}
+			strlcpy(t_data[threadIndex].address,ipstr,INET6_ADDRSTRLEN);
 			t_data[threadIndex].clientsocket = client_sock; //Assign a socket to the found thread
 			client_sock = -1;
 		}
@@ -165,7 +178,7 @@ int main(int argc, char ** argv)
 		{
 			if(fork() != 0)
 			{
-				handleConnection(client_sock,defaultsettings.rootdirectory);
+				handleConnection(client_sock,defaultsettings.rootdirectory,settings.filepath,ipstr);
 				exit(0);
 			}
 		}

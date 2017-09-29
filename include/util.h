@@ -27,7 +27,7 @@
 
 
 
-void handleConnection(int socketfd,char * rootdir);
+void handleConnection(int socketfd,char * rootdir,char * logdir, char * address);
 
 /**
  * @brief Handles connections, serves requests and closes sockets when done
