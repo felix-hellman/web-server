@@ -104,12 +104,12 @@ void parsePath(struct HTTP_buffer *HTTP)
 	}
 
 	//Make sure the resolved path is still in WWW folder
-	/*i = 0;
+	i = 0;
 	while (i < strlen(HTTP->WWW)) {
 		if (i >= strlen(tmp) && HTTP->WWW[i] != tmp[i])
 			HTTP->method = -3;
 		i++;
-	}*/
+	}
 
 	if (strlen(tmp) >= 5 && strcmp(&tmp[strlen(tmp)-5], ".html") == 0)
 		HTTP->content_type = 1;

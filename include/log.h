@@ -19,13 +19,28 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, int socketfd);
  */
 void writeToFile(char * filepath, char * buffer, int buffersize);
 /**
- * @brief Fills the buffer with the clients IP-address
+ * @brief Puts the clients ip-address in the log_entry struct
  */
 void resolveIp(int socketfd, struct log_entry *le);
 /**
  * @brief Concatenates a string to put in the log file
  */
 void logcat(char *entry, struct log_entry *le);
-
+/**
+ * @brief Puts the content length in the log_entry struct
+ */
+void resolveBytes(struct log_entry *le, struct HTTP_buffer *HTTP);
+/**
+ * @brief Puts the HTTP request in the log_entry struct
+ */
+void resolveRequest(struct log_entry *le, struct HTTP_buffer *HTTP);
+/**
+ * @brief Puts the current date and time in the log_entry struct
+ */
+void resolveDate(struct log_entry *le, struct HTTP_buffer *HTTP);
+/**
+ * @brief Puts the response code in the log_entry struct
+ */
+void resolveCode(struct log_entry *le, struct HTTP_buffer *HTTP);
 
 #endif
