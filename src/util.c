@@ -1,4 +1,5 @@
 #include "util.h"
+#include "log.h"
 
 //Return 1 if argument is invalid
 int invalidArgument(char * argument)
@@ -124,6 +125,7 @@ void handleConnection(int socketfd,char * rootdir)
 		write(socketfd,message,httpbuff.buffersize);
 	} while(returncode != 0);
 
+	writeToLog("g", &httpbuff, 1);
 	free(message);
 	free(client_message);
 	shutdown(socketfd,SHUT_RDWR);

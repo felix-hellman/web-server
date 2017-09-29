@@ -43,5 +43,12 @@ struct HTTP_buffer
 	int response_size;///< size of the entire response
   char * WWW;
 };
-
+struct log_entry
+{
+	char ip[20];///< client IP
+	char date[28];///< date and time of the request
+	char request[900];///< the HTTP request
+	char code[4];///< response code
+	char bytes[14];///< content size sent
+};
 #endif
