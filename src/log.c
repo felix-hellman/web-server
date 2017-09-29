@@ -115,7 +115,7 @@ void resolveCode(struct log_entry *le, struct HTTP_buffer *HTTP)
 void logcat(char *buffer, struct log_entry *le)
 {
 	strlcat(buffer, le->ip, LOG_ENTRY_SIZE);
-	strlcat(buffer, "- - ", LOG_ENTRY_SIZE);
+	strlcat(buffer, " - - ", LOG_ENTRY_SIZE);
 	strlcat(buffer, le->date, LOG_ENTRY_SIZE);
 	strlcat(buffer, le->request, LOG_ENTRY_SIZE);
 	strlcat(buffer, le->code, LOG_ENTRY_SIZE);
