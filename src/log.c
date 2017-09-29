@@ -35,7 +35,7 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 	else
 	{
 		int fd;
-		if ((fd = open(pipename, O_WRONLY)) < 0) {
+		if ((fd = open(pipename, O_WRONLY | O_NDELAY)) < 0) {
 			perror("Can't open log pipe");
 		} else {
 			if (write(fd, buffer, buffersize) != buffersize)

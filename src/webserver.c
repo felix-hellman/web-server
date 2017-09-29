@@ -99,7 +99,7 @@ int main(int argc, char ** argv)
 		chdir(defaultsettings.rootdirectory);
 		mkfifo(pipename, 0666);
 		int fd;
-		if ((fd = open(pipename, O_WRONLY)) < 0) {
+		if ((fd = open(pipename, O_WRONLY | O_NDELAY)) < 0) {
 			perror("Can't create log pipe");
 			close(fd);
 		} else if ((fd = open(pipename, O_RDONLY)) < 0) {
