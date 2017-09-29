@@ -195,20 +195,20 @@ int ERROR(struct HTTP_buffer *HTTP)
 	char content[FILE_SIZE];
 	switch(HTTP->method) {
 	case -1:
-		strlcpy(content, "501 Not Implemented\n", sizeof(content));
+		strlcpy(content, "<html><head><title>501</title><body><h1>501 Not Implemented</h1></body></html>\n", sizeof(content));
 		break;
 	case -2:
-		strlcpy(content, "400 Bad Request\n", sizeof(content));
+		strlcpy(content, "<html><head><title>400</title><body><h1>400 Bad Request</h1></body></html>\n", sizeof(content));
 		break;
 	case -3:
-		strlcpy(content, "403 Forbidden\n", sizeof(content));
+		strlcpy(content, "<html><head><title>403</title><body><h1>403 Forbidden</h1></body></html>\n", sizeof(content));
 		break;
 	case -4:
-		strlcpy(content, "404 Not Found\n", sizeof(content));
+		strlcpy(content, "<html><head><title>404</title><body><h1>404 Not Found</h1></body></html>\n", sizeof(content));
 		break;
 	case 0:
 	default:
-		strlcpy(content, "500 Internal Server Error\n", sizeof(content));
+		strlcpy(content, "<html><head><title>500</title><body><h1>500 Internal Server Error</h1></body></html>\n", sizeof(content));
 		break;
 	}
 	HTTP->content_length = strlen(content);
