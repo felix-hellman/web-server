@@ -32,13 +32,18 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 
 	else
 	{
+		if(fork() == 0)
+		{
+			chdir("/");
+			openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-		openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+			syslog (LOG_NOTICE, "Program started by User %d", getuid ());
+			syslog (LOG_INFO, "A tree falls in a forest");
 
-		syslog (LOG_NOTICE, "Program started by User %d", getuid ());
-		syslog (LOG_INFO, "A tree falls in a forest");
+			closelog ();
+			exit(0);
+		}
 
-		closelog ();
 
 	}
 
