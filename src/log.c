@@ -15,6 +15,7 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 {
 	const int buffersize = 1024;
 	char * buffer = calloc(sizeof(char),buffersize);
+	memset(buffer, '\0', buffersize);
 	struct log_entry le;
 	le.ip = ipaddress;
 	le.date[0] = '\0';
@@ -35,11 +36,10 @@ void writeToLog(char * filepath, struct HTTP_buffer * HTTP, char * ipaddress)
 	else
 	{
 		int fd;
-		if ((fd = open(pipename, O_WRONLY | O_NDELAY)) < 0) {
+		if ((fd = open(pipename, O_WRONLY | O_NONBLOCK)) < 0) {
 			perror("Can't open log pipe");
 		} else {
-			if (write(fd, buffer, buffersize) != buffersize)
-				perror("Error while writing to log pipe");
+			write(fd, buffer, buffersize);
 			close(fd);
 		}
 	}

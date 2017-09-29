@@ -99,17 +99,18 @@ int main(int argc, char ** argv)
 		chdir(defaultsettings.rootdirectory);
 		mkfifo(pipename, 0666);
 		int fd;
-		if ((fd = open(pipename, O_WRONLY | O_NDELAY)) < 0) {
+		if ((fd = open(pipename, O_CREAT)) < 0)
 			perror("Can't create log pipe");
-			close(fd);
-		} else if ((fd = open(pipename, O_RDONLY)) < 0) {
+		close(fd);
+		if ((fd = open(pipename, O_RDWR)) < 0) {
 			perror("Can't read log pipe");
 		} else {
 			char buf[1024];
+			int n;
 			openlog ("webserver", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 			while (1) {
-				while (read(fd, buf, 1024) > 0)
-					syslog(LOG_INFO, buf, 1024);
+				while ((n = read(fd, buf, 1024)) > 0);
+					syslog(LOG_INFO, buf, n);
 				sleep(1);
 			}
 		}
