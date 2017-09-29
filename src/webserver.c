@@ -88,6 +88,14 @@ int main(int argc, char ** argv)
 	logpid = fork();
 	if (logpid == 0)
 	{
+		if(real == 0)
+		{
+			int f = open(settings.filepath, O_CREAT, S_IWUSR | S_IRGRP | S_IWOTH);
+			close(f);
+			chown(settings.filepath,1000,1000);
+			setuid(1000);
+			setgid(1000);
+		}
 		chdir(defaultsettings.rootdirectory);
 		mkfifo(pipename, 0666);
 		int fd;
@@ -100,8 +108,8 @@ int main(int argc, char ** argv)
 			char buf[1024];
 			openlog ("webserver", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 			while (1) {
-				read(fd, buf, 1024);
-				syslog(LOG_INFO, buf, 1024);
+				while (read(fd, buf, 1024) > 0)
+					syslog(LOG_INFO, buf, 1024);
 				sleep(1);
 			}
 		}
