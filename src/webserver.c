@@ -88,16 +88,14 @@ int main(int argc, char ** argv)
 	logpid = fork();
 	if (logpid == 0)
 	{
+		chdir(defaultsettings.rootdirectory);
+		mkfifo(pipename, 0666);
+		chmod(pipename,S_IWOTH | S_IROTH | S_IRUSR  | S_IWUSR  | S_IRGRP  | S_IWGRP);
 		if(real == 0)
 		{
-			int f = open(settings.filepath, O_CREAT, S_IWUSR | S_IRGRP | S_IWOTH);
-			close(f);
-			chown(settings.filepath,1000,1000);
 			setuid(1000);
 			setgid(1000);
 		}
-		chdir(defaultsettings.rootdirectory);
-		mkfifo(pipename, 0666);
 		int fd;
 		if ((fd = open(pipename, O_CREAT)) < 0)
 			perror("Can't create log pipe");
@@ -109,7 +107,7 @@ int main(int argc, char ** argv)
 			int n;
 			openlog ("webserver", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 			while (1) {
-				while ((n = read(fd, buf, 1024)) > 0);
+				while ((n = read(fd, buf, 1024)) > 0)
 					syslog(LOG_INFO, buf, n);
 				sleep(1);
 			}
