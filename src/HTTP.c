@@ -70,19 +70,18 @@ void parsePath(struct HTTP_buffer *HTTP)
 	while (stepper < strlen(HTTP->client_message) && HTTP->client_message[stepper] == ' ')
 		stepper++;
 
-	char tmp[PATH_MAX];
-	strlcpy(tmp, HTTP->WWW, sizeof(tmp));
-	int i = strlen(HTTP->WWW);
+	char tmp[PATH_MAX] = "";
+	int i = 0;
+	int j = 0;
 	if (HTTP->client_message[stepper] != '/')
 		tmp[i++] = '/';
-	int j = 0;
 	while (HTTP->client_message[stepper] != ' ' &&
 	HTTP->client_message[stepper] != '\r' &&
 	HTTP->client_message[stepper] != '\n' &&
 	HTTP->client_message[stepper] != '\0' &&
 	HTTP->client_message[stepper] != '\\' &&
 	stepper < strlen(HTTP->client_message) &&
-	i < (PATH_MAX - 1 - strlen("index.html") - strlen(HTTP->WWW))) { //making room for WWW and possible index.html
+	i < (PATH_MAX - 1 - strlen("index.html"))) { //making room for possible index.html
 		tmp[i++] = HTTP->client_message[stepper];
 		HTTP->raw_path[j++] = HTTP->client_message[stepper];
 		stepper++;
@@ -103,14 +102,11 @@ void parsePath(struct HTTP_buffer *HTTP)
 			HTTP->method = 0;
 	}
 
-	//Make sure the resolved path is still in WWW folder
-	i = 0;
-	while (i < strlen(HTTP->WWW)) {
-		if (i >= strlen(tmp) && HTTP->WWW[i] != tmp[i])
-			HTTP->method = -3;
-		i++;
-	}
+	//Make sure the the requested file is not 'pipename'
+	if (strcmp(pipename, &tmp[1]) == 0)	
+		HTTP->method = -3;
 
+	//Set content type
 	if (strlen(tmp) >= 5 && strcmp(&tmp[strlen(tmp)-5], ".html") == 0)
 		HTTP->content_type = 1;
 }

@@ -2,7 +2,7 @@
 #define STRUCTS_H
 
 #include <limits.h>
-#define pipename "LOGPIPE"
+#define pipename ".dbd6f08bf4d07ba0c277f486741d83b5"
 /**
  * @file structs.h
  * @brief All structs used are defined here
@@ -44,7 +44,6 @@ struct HTTP_buffer
 	int content_type;///< contet-type fo requested file. 0=application/octet-stream, 1=text/html
 	size_t content_length;///< size of the content in bytes
 	int response_size;///< size of the entire response
-  char * WWW;
 };
 struct log_entry
 {

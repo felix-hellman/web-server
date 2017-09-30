@@ -38,14 +38,14 @@ void handle_signal(int signal)
 	printf("Signal : %d\n",signal);
 
 	/*Some cleanup stuff*/
-	if (logpid != 0)
-		kill(logpid, 2);
+	if(logpid == 0)
+		exit(0);
 	if(res.settings->requestHandlingMode == 't')
 	{
 		for(int i = 0; i < THREADPOOL_MAX; i++)
 			res.t_data[i].working = 0;
 		threadCleanup(res.threads,THREADPOOL_MAX);
-		pthread_exit(NULL);
+		//pthread_exit(NULL);
 	}
 	else if (res.settings->requestHandlingMode == 'f')
 	{
@@ -107,9 +107,9 @@ int main(int argc, char ** argv)
 			int n;
 			openlog ("webserver", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 			while (1) {
-				while ((n = read(fd, buf, 1024)) > 0)
-					;
-				syslog(LOG_INFO, buf, n);
+				n = read(fd, buf, 1024);
+				if(buf[0] >= '1' && buf[0] <='9')
+					syslog(LOG_INFO, buf, n);
 				sleep(1);
 			}
 		}

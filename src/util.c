@@ -111,7 +111,6 @@ void handleConnection(int socketfd,char * rootdir,char * logpath,char * address)
 	httpbuff.content_type = 0;
 	httpbuff.content_length = 0;
 	httpbuff.response_size = 0;
-	httpbuff.WWW = rootdir;
 
 
 	recv(socketfd , client_message, buffersize, 0);
