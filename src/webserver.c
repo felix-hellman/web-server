@@ -108,7 +108,8 @@ int main(int argc, char ** argv)
 			openlog ("webserver", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 			while (1) {
 				while ((n = read(fd, buf, 1024)) > 0)
-					syslog(LOG_INFO, buf, n);
+					;
+				syslog(LOG_INFO, buf, n);
 				sleep(1);
 			}
 		}
